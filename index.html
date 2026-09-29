@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.json">
+<title>PDF Photo Pin</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827;overflow:hidden}
+button{font:inherit;border:0;border-radius:12px;padding:11px 15px;background:#111827;color:white}
+button.secondary{background:#e5e7eb;color:#111827}.danger{background:#b91c1c}
+#app{height:100%;display:flex;flex-direction:column}
+header{height:62px;flex:0 0 62px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;gap:8px}
+header .title{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toolbar{display:flex;gap:7px;align-items:center}
+main{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:14px}
+#viewer{position:relative;display:none;box-shadow:0 4px 18px #0002;background:white}
+#pdfCanvas{display:block;max-width:none}
+#pins{position:absolute;inset:0}
+.pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:#dc2626;border:3px solid white;box-shadow:0 2px 8px #0005;color:white;font-weight:700;font-size:12px;padding:0}
+#empty{max-width:600px;text-align:center;margin:auto;padding:30px}
+#empty h1{font-size:28px;margin:0 0 10px}.muted{color:#6b7280}
+#modalBackdrop{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
+.modal{background:white;border-radius:18px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:18px}
+.modal h2{margin:0 0 14px}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+textarea{width:100%;min-height:90px;border:1px solid #d1d5db;border-radius:12px;padding:12px;font:inherit}
+.preview{width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#111827;display:none}
+input[type=file]{display:none}
+#toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:#111827;color:white;padding:10px 15px;border-radius:12px;display:none;z-index:30}
+.pageInfo{font-size:13px;color:#e5e7eb;white-space:nowrap}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="title" id="title">PDF Photo Pin</div>
+  <div class="toolbar">
+    <span class="pageInfo" id="pageInfo">—</span>
+    <button class="secondary" id="prevBtn">‹</button>
+    <button class="secondary" id="nextBtn">›</button>
+    <button id="openBtn">Apri PDF</button>
+  </div>
+</header>
+<main id="main">
+  <section id="empty">
+    <h1>PDF Photo Pin</h1>
+    <p class="muted">Carica una tavola PDF, tocca un punto e associa una foto e una nota. Tutto resta sul dispositivo.</p>
+    <button id="emptyOpen">+ Nuovo PDF</button>
+    <p class="muted" style="font-size:13px;margin-top:20px">Dopo l'installazione puoi lavorare anche senza internet.</p>
+  </section>
+  <div id="viewer"><canvas id="pdfCanvas"></canvas><div id="pins"></div></div>
+</main>
+
+<div id="modalBackdrop">
+ <div class="modal">
+   <h2 id="modalTitle">Nuovo punto</h2>
+   <img id="preview" class="preview">
+   <p id="hint" class="muted">Tocca il pulsante per scegliere o scattare una foto.</p>
+   <div class="row">
+     <label><button type="button" id="cameraBtn">📷 Scatta foto</button><input id="cameraInput" type="file" accept="image/*" capture="environment"></label>
+     <label><button type="button" id="libraryBtn" class="secondary">🖼 Libreria</button><input id="libraryInput" type="file" accept="image/*"></label>
+   </div>
+   <div style="margin-top:14px">
+     <label class="muted">Nota</label>
+     <textarea id="note" placeholder="Es. Parete da verificare..."></textarea>
+   </div>
+   <div class="row" style="justify-content:flex-end">
+     <button id="cancelBtn" class="secondary">Annulla</button>
+     <button id="deleteBtn" class="danger" style="display:none">Elimina</button>
+     <button id="saveBtn">Salva punto</button>
+   </div>
+ </div>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const DB_NAME='pdf-photo-pin-v1', STORE='projects';
+let db, project=null, pdf=null, pageNum=1, rendering=false, pendingPoint=null, selectedPhotoBlob=null, selectedPhotoUrl=null;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const $=id=>document.getElementById(id);
+function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',1800)}
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
+function putProject(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(project);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+function getProject(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+
+async function openFile(file){
+  const buf=await file.arrayBuffer();
+  project={id:crypto.randomUUID(),name:file.name,pdf:new Blob([buf],{type:'application/pdf'}),pages:0,pins:[],updated:Date.now()};
+  await putProject();
+  await loadPdf();
+}
+async function loadPdf(){
+  $('title').textContent=project.name;
+  pdf=await pdfjsLib.getDocument({data:await project.pdf.arrayBuffer()}).promise;
+  project.pages=pdf.numPages; project.updated=Date.now(); await putProject();
+  pageNum=1; $('empty').style.display='none'; $('viewer').style.display='block'; await renderPage();
+}
+async function renderPage(){
+ if(rendering)return; rendering=true;
+ const page=await pdf.getPage(pageNum);
+ const base=page.getViewport({scale:1.5});
+ const maxW=Math.min(window.innerWidth-28,1100);
+ const scale=Math.min(1.5,maxW/base.width);
+ const vp=page.getViewport({scale});
+ const c=$('pdfCanvas');c.width=vp.width;c.height=vp.height;
+ $('viewer').style.width=vp.width+'px';$('viewer').style.height=vp.height+'px';
+ await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+ $('pageInfo').textContent=pageNum+' / '+pdf.numPages;
+ renderPins(); rendering=false;
+}
+function renderPins(){
+ $('pins').innerHTML='';
+ for(const p of project.pins.filter(x=>x.page===pageNum)){
+   const b=document.createElement('button');b.className='pin';b.textContent=p.n;
+   b.style.left=(p.x*100)+'%';b.style.top=(p.y*100)+'%';
+   b.onclick=e=>{e.stopPropagation();editPoint(p.id)};
+   $('pins').appendChild(b);
+ }
+}
+$('viewer').addEventListener('click',e=>{
+ const r=$('viewer').getBoundingClientRect();
+ const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+ if(x>=0&&x<=1&&y>=0&&y<=1){pendingPoint={page:pageNum,x,y,id:null};openPointModal()}
+});
+function openPointModal(editId=null){
+ selectedPhotoBlob=null;
+ if(selectedPhotoUrl){URL.revokeObjectURL(selectedPhotoUrl);selectedPhotoUrl=null}
+ const p=editId?project.pins.find(x=>x.id===editId):null;
+ pendingPoint=p?{...p}:pendingPoint;
+ $('modalTitle').textContent=p?'Modifica punto '+p.n:'Nuovo punto';
+ $('note').value=p?.note||'';$('preview').style.display='none';$('preview').src='';
+ $('deleteBtn').style.display=p?'inline-block':'none';
+ if(p?.photo){selectedPhotoBlob=p.photo;showPhoto(p.photo)}
+ $('modalBackdrop').style.display='flex';
+}
+function showPhoto(blob){selectedPhotoUrl=URL.createObjectURL(blob);$('preview').src=selectedPhotoUrl;$('preview').style.display='block';$('hint').textContent='Foto associata';}
+function editPoint(id){openPointModal(id)}
+function closeModal(){$('modalBackdrop').style.display='none'}
+function chooseFile(input){input.click()}
+async function photoSelected(file){if(!file)return;selectedPhotoBlob=file;showPhoto(file)}
+$('cameraBtn').onclick=()=>chooseFile($('cameraInput'));
+$('libraryBtn').onclick=()=>chooseFile($('libraryInput'));
+$('cameraInput').onchange=e=>photoSelected(e.target.files[0]);
+$('libraryInput').onchange=e=>photoSelected(e.target.files[0]);
+$('cancelBtn').onclick=closeModal;
+$('deleteBtn').onclick=async()=>{project.pins=project.pins.filter(p=>p.id!==pendingPoint.id);project.updated=Date.now();await putProject();closeModal();renderPins();toast('Punto eliminato')};
+$('saveBtn').onclick=async()=>{
+ if(!selectedPhotoBlob && !pendingPoint?.photo){toast('Aggiungi una foto');return}
+ const data={...pendingPoint,id:pendingPoint.id||crypto.randomUUID(),n:pendingPoint.n||((Math.max(0,...project.pins.map(p=>p.n||0))+1)),note:$('note').value.trim(),photo:selectedPhotoBlob||pendingPoint.photo};
+ const idx=project.pins.findIndex(p=>p.id===data.id); if(idx>=0)project.pins[idx]=data; else project.pins.push(data);
+ project.updated=Date.now();await putProject();closeModal();renderPins();toast('Punto salvato');
+};
+$('prevBtn').onclick=async()=>{if(pdf&&pageNum>1){pageNum--;await renderPage()}};
+$('nextBtn').onclick=async()=>{if(pdf&&pageNum<pdf.numPages){pageNum++;await renderPage()}};
+const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='application/pdf';fileInput.onchange=e=>e.target.files[0]&&openFile(e.target.files[0]);
+$('openBtn').onclick=() => fileInput.click(); $('emptyOpen').onclick=()=>fileInput.click();
+
+window.addEventListener('resize',()=>{if(pdf)renderPage()});
+openDB();
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+</script>
+</body>
+</html>
