@@ -10,6 +10,7 @@
 *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827;overflow:hidden}
 button{font:inherit;border:0;border-radius:12px;padding:11px 15px;background:#111827;color:white}
 button.secondary{background:#e5e7eb;color:#111827}.danger{background:#b91c1c}
+button:disabled{opacity:.5}
 #app{height:100%;display:flex;flex-direction:column}
 header{height:62px;flex:0 0 62px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;gap:8px}
 header .title{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -39,6 +40,7 @@ input[type=file]{display:none}
     <span class="pageInfo" id="pageInfo">—</span>
     <button class="secondary" id="prevBtn">‹</button>
     <button class="secondary" id="nextBtn">›</button>
+    <button class="secondary" id="exportBtn">Esporta</button>
     <button id="openBtn">Apri PDF</button>
   </div>
 </header>
@@ -74,7 +76,10 @@ input[type=file]{display:none}
 </div>
 <div id="toast"></div>
 
+<input id="pdfInput" type="file" accept="application/pdf">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const DB_NAME='pdf-photo-pin-v1', STORE='projects';
 let db, project=null, pdf=null, pageNum=1, rendering=false, pendingPoint=null, selectedPhotoBlob=null, selectedPhotoUrl=null;
@@ -156,12 +161,102 @@ $('saveBtn').onclick=async()=>{
 };
 $('prevBtn').onclick=async()=>{if(pdf&&pageNum>1){pageNum--;await renderPage()}};
 $('nextBtn').onclick=async()=>{if(pdf&&pageNum<pdf.numPages){pageNum++;await renderPage()}};
-const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='application/pdf';fileInput.onchange=e=>e.target.files[0]&&openFile(e.target.files[0]);
-$('openBtn').onclick=() => fileInput.click(); $('emptyOpen').onclick=()=>fileInput.click();
+
+// Input PDF nel DOM (necessario per far funzionare .click() su iPad/Safari: un input
+// creato solo in JS e mai inserito nel documento non apre il picker file su iOS).
+$('pdfInput').onchange = e => e.target.files[0] && openFile(e.target.files[0]);
+$('openBtn').onclick = () => $('pdfInput').click();
+$('emptyOpen').onclick = () => $('pdfInput').click();
 
 window.addEventListener('resize',()=>{if(pdf)renderPage()});
 openDB();
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
+
+// ---- Esportazione PDF con punti numerati e foto numerate ----
+function blobToImage(blob){
+ return new Promise((res,rej)=>{
+   const url=URL.createObjectURL(blob);
+   const img=new Image();
+   img.onload=()=>{res(img)};
+   img.onerror=rej;
+   img.src=url;
+ });
+}
+function imageToJpegDataURL(img){
+ const c=document.createElement('canvas');
+ c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height;
+ c.getContext('2d').drawImage(img,0,0);
+ return c.toDataURL('image/jpeg',0.85);
+}
+async function renderExportPage(pn){
+ const page=await pdf.getPage(pn);
+ const scale=2;
+ const vp=page.getViewport({scale});
+ const canvas=document.createElement('canvas');
+ canvas.width=vp.width; canvas.height=vp.height;
+ const ctx=canvas.getContext('2d');
+ await page.render({canvasContext:ctx,viewport:vp}).promise;
+ for(const p of project.pins.filter(x=>x.page===pn)){
+   const cx=p.x*canvas.width, cy=p.y*canvas.height, r=22;
+   ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+   ctx.fillStyle='#dc2626'; ctx.fill();
+   ctx.lineWidth=4; ctx.strokeStyle='#ffffff'; ctx.stroke();
+   ctx.fillStyle='#ffffff'; ctx.font='bold '+Math.round(r*1.1)+'px sans-serif';
+   ctx.textAlign='center'; ctx.textBaseline='middle';
+   ctx.fillText(String(p.n),cx,cy+1);
+ }
+ return canvas;
+}
+async function exportReport(){
+ if(!project||!pdf){toast('Apri prima un PDF');return}
+ if(!window.jspdf){toast('Libreria export non disponibile offline');return}
+ $('exportBtn').disabled=true; toast('Generazione PDF in corso...');
+ try{
+   const {jsPDF}=window.jspdf;
+   const out=new jsPDF({unit:'pt',format:'a4'});
+   const pageW=out.internal.pageSize.getWidth(), pageH=out.internal.pageSize.getHeight();
+   const margin=20;
+
+   for(let pn=1; pn<=pdf.numPages; pn++){
+     const canvas=await renderExportPage(pn);
+     const imgData=canvas.toDataURL('image/jpeg',0.85);
+     const availW=pageW-margin*2, availH=pageH-margin*2;
+     const ratio=Math.min(availW/canvas.width, availH/canvas.height);
+     const w=canvas.width*ratio, h=canvas.height*ratio;
+     if(pn>1) out.addPage();
+     out.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
+   }
+
+   const pinsSorted=[...project.pins].sort((a,b)=>a.page-b.page||a.n-b.n);
+   for(const p of pinsSorted){
+     out.addPage();
+     out.setFontSize(16);
+     out.text('Punto '+p.n+' — Pagina '+p.page, 40, 50);
+     out.setFontSize(11);
+     const lines=out.splitTextToSize(p.note||'(nessuna nota)', pageW-80);
+     out.text(lines, 40, 75);
+     let photoTop=75+lines.length*14+15;
+     if(p.photo){
+       const img=await blobToImage(p.photo);
+       const dataUrl=imageToJpegDataURL(img);
+       const maxW=pageW-80, maxH=pageH-photoTop-40;
+       const ratio=Math.min(maxW/img.width, maxH/img.height, 1);
+       const w=img.width*ratio, h=img.height*ratio;
+       out.addImage(dataUrl,'JPEG',40,photoTop,w,h);
+     }
+   }
+
+   const base=(project.name||'report').replace(/\.pdf$/i,'');
+   out.save(base+'-report.pdf');
+   toast('PDF esportato');
+ }catch(err){
+   console.error(err);
+   toast('Errore durante l\'esportazione');
+ }finally{
+   $('exportBtn').disabled=false;
+ }
+}
+$('exportBtn').onclick=exportReport;
 </script>
 </body>
 </html>
