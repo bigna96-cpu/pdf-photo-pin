@@ -1,4 +1,4 @@
-const CACHE='pdf-photo-pin-v2';
+const CACHE='pdf-photo-pin-v3';
 const ASSETS=['./','./index.html','./manifest.json','./sw.js'];
 const CDN=[
 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
