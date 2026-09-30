@@ -16,9 +16,10 @@ header{height:62px;flex:0 0 62px;background:#111827;color:#fff;display:flex;alig
 header .title{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toolbar{display:flex;gap:7px;align-items:center}
 main{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:14px}
-#viewer{position:relative;display:none;box-shadow:0 4px 18px #0002;background:white}
+#viewer{position:relative;display:none;box-shadow:0 4px 18px #0002;background:white;transform-origin:0 0;touch-action:pan-y}
 #pdfCanvas{display:block;max-width:none}
 #pins{position:absolute;inset:0}
+#zoomReset{position:fixed;right:16px;bottom:25px;z-index:20;display:none;opacity:.92}
 .pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:#dc2626;border:3px solid white;box-shadow:0 2px 8px #0005;color:white;font-weight:700;font-size:12px;padding:0}
 #empty{max-width:600px;text-align:center;margin:auto;padding:30px}
 #empty h1{font-size:28px;margin:0 0 10px}.muted{color:#6b7280}
@@ -53,6 +54,7 @@ input[type=file]{display:none}
   </section>
   <div id="viewer"><canvas id="pdfCanvas"></canvas><div id="pins"></div></div>
 </main>
+<button id="zoomReset" class="secondary">1:1</button>
 
 <div id="modalBackdrop">
  <div class="modal">
@@ -106,6 +108,7 @@ async function loadPdf(){
 }
 async function renderPage(){
  if(rendering)return; rendering=true;
+ resetZoom();
  const page=await pdf.getPage(pageNum);
  const base=page.getViewport({scale:1.5});
  const maxW=Math.min(window.innerWidth-28,1100);
@@ -127,10 +130,49 @@ function renderPins(){
  }
 }
 $('viewer').addEventListener('click',e=>{
+ if(Date.now()-lastGestureEnd<300)return; // ignora il tap finale di un pinch/pan
  const r=$('viewer').getBoundingClientRect();
  const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
  if(x>=0&&x<=1&&y>=0&&y<=1){pendingPoint={page:pageNum,x,y,id:null};openPointModal()}
 });
+
+// ---- Zoom/pan isolati sulla tavola (pinch a due dita), il resto del sito resta fisso ----
+let zScale=1, zTx=0, zTy=0, pinchStartDist=null, pinchStartScale=1, panStart=null, lastGestureEnd=0;
+function applyTransform(){$('viewer').style.transform=`translate(${zTx}px,${zTy}px) scale(${zScale})`}
+function setZoomMode(active){$('main').style.overflow=active?'hidden':'auto'}
+function resetZoom(){zScale=1;zTx=0;zTy=0;applyTransform();setZoomMode(false);$('zoomReset').style.display='none'}
+function dist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
+$('viewer').addEventListener('touchstart',e=>{
+ if(e.touches.length===2){
+   pinchStartDist=dist(e.touches[0],e.touches[1]);
+   pinchStartScale=zScale; panStart=null;
+ }else if(e.touches.length===1 && zScale>1){
+   panStart={x:e.touches[0].clientX-zTx,y:e.touches[0].clientY-zTy};
+ }
+},{passive:true});
+$('viewer').addEventListener('touchmove',e=>{
+ if(e.touches.length===2 && pinchStartDist){
+   e.preventDefault();
+   setZoomMode(true);
+   const d=dist(e.touches[0],e.touches[1]);
+   const newScale=Math.min(4,Math.max(1,pinchStartScale*(d/pinchStartDist)));
+   const a=e.touches[0], b=e.touches[1];
+   const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
+   const ratio=newScale/zScale;
+   zTx=mid.x-(mid.x-zTx)*ratio; zTy=mid.y-(mid.y-zTy)*ratio;
+   zScale=newScale; applyTransform();
+   $('zoomReset').style.display=zScale>1.02?'block':'none';
+ }else if(e.touches.length===1 && panStart && zScale>1){
+   e.preventDefault();
+   zTx=e.touches[0].clientX-panStart.x; zTy=e.touches[0].clientY-panStart.y;
+   applyTransform();
+ }
+},{passive:false});
+$('viewer').addEventListener('touchend',e=>{
+ if(e.touches.length<2){if(pinchStartDist)lastGestureEnd=Date.now();pinchStartDist=null}
+ if(e.touches.length<1){if(panStart)lastGestureEnd=Date.now();panStart=null}
+});
+$('zoomReset').onclick=resetZoom;
 function openPointModal(editId=null){
  selectedPhotoBlob=null;
  if(selectedPhotoUrl){URL.revokeObjectURL(selectedPhotoUrl);selectedPhotoUrl=null}
