@@ -31,6 +31,12 @@ textarea{width:100%;min-height:90px;border:1px solid #d1d5db;border-radius:12px;
 input[type=file]{display:none}
 #toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:#111827;color:white;padding:10px 15px;border-radius:12px;display:none;z-index:30}
 .pageInfo{font-size:13px;color:#e5e7eb;white-space:nowrap}
+.recentItem{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #e5e7eb}
+.recentItem:last-child{border-bottom:0}
+.recentInfo{flex:1;min-width:0}
+.recentName{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recentMeta{font-size:12px;color:#6b7280;margin-top:2px}
+.recentItem button{padding:8px 12px;font-size:13px}
 </style>
 </head>
 <body>
@@ -42,6 +48,7 @@ input[type=file]{display:none}
     <button class="secondary" id="prevBtn">‹</button>
     <button class="secondary" id="nextBtn">›</button>
     <button class="secondary" id="exportBtn">Esporta</button>
+    <button class="secondary" id="recentBtn">Recenti</button>
     <button id="openBtn">Apri PDF</button>
   </div>
 </header>
@@ -50,7 +57,8 @@ input[type=file]{display:none}
     <h1>PDF Photo Pin</h1>
     <p class="muted">Carica una tavola PDF, tocca un punto e associa una foto e una nota. Tutto resta sul dispositivo.</p>
     <button id="emptyOpen">+ Nuovo PDF</button>
-    <p class="muted" style="font-size:13px;margin-top:20px">Dopo l'installazione puoi lavorare anche senza internet.</p>
+    <button class="secondary" id="emptyRecent" style="margin-left:8px">Recenti</button>
+    <p class="muted" style="font-size:13px;margin-top:20px">Dopo l'installazione puoi lavorare anche senza internet. Gli ultimi 10 PDF restano salvati sul dispositivo in "Recenti".</p>
   </section>
   <div id="viewer"><canvas id="pdfCanvas"></canvas><div id="pins"></div></div>
 </main>
@@ -76,6 +84,17 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
+
+<div id="recentBackdrop" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10">
+ <div class="modal">
+   <h2>PDF recenti</h2>
+   <p class="muted" style="margin-top:-8px">Riapri un progetto salvato sul dispositivo, con pin e foto inclusi. Massimo 10 conservati.</p>
+   <div id="recentList" style="margin-top:10px"></div>
+   <div class="row" style="justify-content:flex-end">
+     <button id="recentCloseBtn" class="secondary">Chiudi</button>
+   </div>
+ </div>
+</div>
 <div id="toast"></div>
 
 <input id="pdfInput" type="file" accept="application/pdf">
@@ -93,13 +112,53 @@ function toast(s){$('toast').textContent=s;$('toast').style.display='block';setT
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
 function putProject(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(project);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
 function getProject(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function listProjects(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+function deleteProjectRecord(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
+const HISTORY_LIMIT=10;
+async function enforceHistoryLimit(){
+ const all=await listProjects();
+ all.sort((a,b)=>b.updated-a.updated);
+ for(const p of all.slice(HISTORY_LIMIT)){ if(p.id!==project?.id) await deleteProjectRecord(p.id) }
+}
 
 async function openFile(file){
   const buf=await file.arrayBuffer();
+  const existing=(await listProjects()).find(p=>p.name===file.name && p.pdf && p.pdf.size===buf.byteLength);
+  if(existing){
+    project=existing;
+    await loadPdf();
+    toast('Ripreso "'+project.name+'" con i punti già salvati');
+    await enforceHistoryLimit();
+    return;
+  }
   project={id:crypto.randomUUID(),name:file.name,pdf:new Blob([buf],{type:'application/pdf'}),pages:0,pins:[],updated:Date.now()};
   await putProject();
   await loadPdf();
+  await enforceHistoryLimit();
 }
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function renderRecentList(){
+ const list=$('recentList');
+ const all=await listProjects();
+ all.sort((a,b)=>b.updated-a.updated);
+ if(!all.length){list.innerHTML='<p class="muted">Nessun PDF recente.</p>';return}
+ list.innerHTML='';
+ for(const p of all){
+   const item=document.createElement('div'); item.className='recentItem';
+   const info=document.createElement('div'); info.className='recentInfo';
+   const d=new Date(p.updated);
+   info.innerHTML=`<div class="recentName">${escapeHtml(p.name)}</div><div class="recentMeta">${p.pages||'?'} pag. · ${p.pins.length} punti · ${d.toLocaleDateString('it-IT')}</div>`;
+   const openBtn=document.createElement('button'); openBtn.textContent='Apri';
+   openBtn.onclick=async()=>{$('recentBackdrop').style.display='none';project=p;await loadPdf()};
+   const delBtn=document.createElement('button'); delBtn.className='secondary'; delBtn.textContent='🗑';
+   delBtn.onclick=async()=>{await deleteProjectRecord(p.id);renderRecentList()};
+   item.appendChild(info); item.appendChild(openBtn); item.appendChild(delBtn);
+   list.appendChild(item);
+ }
+}
+$('recentBtn').onclick=()=>{renderRecentList();$('recentBackdrop').style.display='flex'};
+$('emptyRecent').onclick=()=>{renderRecentList();$('recentBackdrop').style.display='flex'};
+$('recentCloseBtn').onclick=()=>{$('recentBackdrop').style.display='none'};
 async function loadPdf(){
   $('title').textContent=project.name;
   pdf=await pdfjsLib.getDocument({data:await project.pdf.arrayBuffer()}).promise;
@@ -137,7 +196,7 @@ $('viewer').addEventListener('click',e=>{
 });
 
 // ---- Zoom/pan isolati sulla tavola (pinch a due dita), il resto del sito resta fisso ----
-let zScale=1, zTx=0, zTy=0, pinchStartDist=null, pinchStartScale=1, panStart=null, lastGestureEnd=0;
+let zScale=1, zTx=0, zTy=0, pinchStartDist=null, pinchStartScale=1, panStart=null, panInitial=null, panMoved=false, lastGestureEnd=0;
 function applyTransform(){$('viewer').style.transform=`translate(${zTx}px,${zTy}px) scale(${zScale})`}
 function setZoomMode(active){$('main').style.overflow=active?'hidden':'auto'}
 function resetZoom(){zScale=1;zTx=0;zTy=0;applyTransform();setZoomMode(false);$('zoomReset').style.display='none'}
@@ -145,9 +204,11 @@ function dist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
 $('viewer').addEventListener('touchstart',e=>{
  if(e.touches.length===2){
    pinchStartDist=dist(e.touches[0],e.touches[1]);
-   pinchStartScale=zScale; panStart=null;
+   pinchStartScale=zScale; panStart=null; panInitial=null; panMoved=false;
  }else if(e.touches.length===1 && zScale>1){
    panStart={x:e.touches[0].clientX-zTx,y:e.touches[0].clientY-zTy};
+   panInitial={x:e.touches[0].clientX,y:e.touches[0].clientY};
+   panMoved=false;
  }
 },{passive:true});
 $('viewer').addEventListener('touchmove',e=>{
@@ -163,14 +224,21 @@ $('viewer').addEventListener('touchmove',e=>{
    zScale=newScale; applyTransform();
    $('zoomReset').style.display=zScale>1.02?'block':'none';
  }else if(e.touches.length===1 && panStart && zScale>1){
+   const t=e.touches[0];
+   if(!panMoved){
+     // sotto una piccola soglia di movimento consideriamo il tocco un tap (per piazzare un pin),
+     // non un trascinamento: senza questa soglia, un tap mentre si è zoomati veniva sempre
+     // interpretato come "pan" e il pin non veniva mai creato.
+     if(Math.hypot(t.clientX-panInitial.x,t.clientY-panInitial.y)>6) panMoved=true; else return;
+   }
    e.preventDefault();
-   zTx=e.touches[0].clientX-panStart.x; zTy=e.touches[0].clientY-panStart.y;
+   zTx=t.clientX-panStart.x; zTy=t.clientY-panStart.y;
    applyTransform();
  }
 },{passive:false});
 $('viewer').addEventListener('touchend',e=>{
  if(e.touches.length<2){if(pinchStartDist)lastGestureEnd=Date.now();pinchStartDist=null}
- if(e.touches.length<1){if(panStart)lastGestureEnd=Date.now();panStart=null}
+ if(e.touches.length<1){if(panMoved)lastGestureEnd=Date.now();panStart=null;panInitial=null;panMoved=false}
 });
 $('zoomReset').onclick=resetZoom;
 function openPointModal(editId=null){
