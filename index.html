@@ -14,40 +14,69 @@ button.secondary{background:#e5e7eb;color:#111827}.danger{background:#b91c1c}
 button:disabled{opacity:.5}
 #app{height:100%;display:flex;flex-direction:column}
 header{height:62px;flex:0 0 62px;background:#111827;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;gap:8px}
-header .title{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.toolbar{display:flex;gap:7px;align-items:center}
+header .title{font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:60px;cursor:pointer}
+.toolbar{display:flex;gap:7px;align-items:center;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.toolbar::-webkit-scrollbar{display:none}
+.toolbar button{flex:0 0 auto}
 main{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:14px}
 #viewer{position:relative;display:none;box-shadow:0 4px 18px #0002;background:white;transform-origin:0 0;touch-action:pan-y}
 #pdfCanvas{display:block;max-width:none}
 #pins{position:absolute;inset:0}
 #zoomReset{position:fixed;right:16px;bottom:25px;z-index:20;display:none;opacity:.92}
 .pin{position:absolute;width:var(--pin-size);height:var(--pin-size);border-radius:50%;background:#dc2626;border:calc(var(--pin-size)*0.1) solid white;box-shadow:0 2px 8px #0005;color:white;font-weight:700;font-size:calc(var(--pin-size)*0.43);padding:0}
+.pin.flash{animation:ring .8s ease-out 3}
+@keyframes ring{0%{box-shadow:0 0 0 0 #fbbf24,0 2px 8px #0005}100%{box-shadow:0 0 0 26px #fbbf2400,0 2px 8px #0005}}
 #empty{max-width:600px;text-align:center;margin:auto;padding:30px}
 #empty h1{font-size:28px;margin:0 0 10px}.muted{color:#6b7280}
-#modalBackdrop{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
+.bd{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
 .modal{background:white;border-radius:18px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:18px}
 .modal h2{margin:0 0 14px}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-textarea{width:100%;min-height:90px;border:1px solid #d1d5db;border-radius:12px;padding:12px;font:inherit}
+textarea,input[type=text],input[type=search]{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:12px;font:inherit}
+textarea{min-height:90px}
 .preview{width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#111827;display:none}
 input[type=file]{display:none}
-#toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:#111827;color:white;padding:10px 15px;border-radius:12px;display:none;z-index:30}
+#toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:#111827;color:white;padding:10px 15px;border-radius:12px;display:none;z-index:60;max-width:90vw;text-align:center}
 .pageInfo{font-size:13px;color:#e5e7eb;white-space:nowrap}
-.recentItem{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #e5e7eb}
+.recentItem{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #e5e7eb}
 .recentItem:last-child{border-bottom:0}
+.recentThumb{flex:0 0 48px;width:48px;height:64px;border-radius:6px;background:#e5e7eb;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid #d1d5db}
 .recentInfo{flex:1;min-width:0}
 .recentName{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .recentMeta{font-size:12px;color:#6b7280;margin-top:2px}
-.recentItem button{padding:8px 12px;font-size:13px}
+.recentActions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:150px}
+.recentItem button{padding:8px 11px;font-size:13px}
+.chip{padding:7px 12px;font-size:13px;background:#e5e7eb;color:#111827;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.chip.on{outline:2px solid #111827;background:#fff}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex:0 0 12px}
+.pinRow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #e5e7eb;cursor:pointer}
+.pinRow:last-child{border-bottom:0}
+.pinBadge{flex:0 0 30px;height:30px;border-radius:50%;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px}
+.pinRow .txt{flex:1;min-width:0}
+.pinRow .note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pinRow .meta{font-size:12px;color:#6b7280}
+#moveBar{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2563eb;color:#fff;padding:8px 8px 8px 14px;border-radius:14px;display:none;align-items:center;gap:10px;z-index:25;box-shadow:0 4px 14px #0004}
+#moveBar button{padding:6px 12px;background:#fff;color:#111827}
+#dlgBackdrop{z-index:40}
+#busy{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.busyBox{background:#fff;border-radius:18px;padding:22px 26px;min-width:250px;max-width:340px;text-align:center}
+.spinner{width:34px;height:34px;border:4px solid #e5e7eb;border-top-color:#111827;border-radius:50%;margin:0 auto 12px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:12px}
+.bar>div{height:100%;width:0;background:#111827;border-radius:99px;transition:width .15s}
+.bar.warn>div{background:#b91c1c}
+.exportBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.exportBtns button{width:100%}
 </style>
 </head>
 <body>
 <div id="app">
 <header>
-  <div class="title" id="title">PDF Photo Pin</div>
+  <div class="title" id="title" title="Tocca per rinominare">PDF Photo Pin</div>
   <div class="toolbar">
     <span class="pageInfo" id="pageInfo">—</span>
     <button class="secondary" id="prevBtn">‹</button>
     <button class="secondary" id="nextBtn">›</button>
+    <button class="secondary" id="pinsBtn">Punti</button>
     <button class="secondary" id="exportBtn">Esporta</button>
     <button class="secondary" id="recentBtn">Recenti</button>
     <button class="secondary" id="settingsBtn">⚙</button>
@@ -60,13 +89,15 @@ input[type=file]{display:none}
     <p class="muted">Carica una tavola PDF, tocca un punto e associa una foto e una nota. Tutto resta sul dispositivo.</p>
     <button id="emptyOpen">+ Nuovo PDF</button>
     <button class="secondary" id="emptyRecent" style="margin-left:8px">Recenti</button>
-    <p class="muted" style="font-size:13px;margin-top:20px">Dopo l'installazione puoi lavorare anche senza internet. Gli ultimi 10 PDF restano salvati sul dispositivo in "Recenti".</p>
+    <p class="muted" style="font-size:13px;margin-top:20px">Dopo l'installazione puoi lavorare anche senza internet. Gli ultimi 10 PDF restano salvati sul dispositivo in "Recenti". Per sicurezza, fai ogni tanto un backup da "Esporta".</p>
   </section>
   <div id="viewer"><canvas id="pdfCanvas"></canvas><div id="pins"></div></div>
 </main>
 <button id="zoomReset" class="secondary">1:1</button>
+<div id="moveBar"><span id="moveText">Tocca la nuova posizione</span><button id="moveCancel">Annulla</button></div>
 
-<div id="modalBackdrop">
+<!-- Punto: nuovo / modifica -->
+<div id="modalBackdrop" class="bd">
  <div class="modal">
    <h2 id="modalTitle">Nuovo punto</h2>
    <img id="preview" class="preview">
@@ -76,18 +107,24 @@ input[type=file]{display:none}
      <label><button type="button" id="libraryBtn" class="secondary">🖼 Libreria</button><input id="libraryInput" type="file" accept="image/*"></label>
    </div>
    <div style="margin-top:14px">
+     <label class="muted">Stato</label>
+     <div class="row" id="statusRow" style="margin-top:6px"></div>
+   </div>
+   <div style="margin-top:14px">
      <label class="muted">Nota</label>
      <textarea id="note" placeholder="Es. Parete da verificare..."></textarea>
    </div>
    <div class="row" style="justify-content:flex-end">
      <button id="cancelBtn" class="secondary">Annulla</button>
      <button id="deleteBtn" class="danger" style="display:none">Elimina</button>
+     <button id="moveBtn" class="secondary" style="display:none">Sposta</button>
      <button id="saveBtn">Salva punto</button>
    </div>
  </div>
 </div>
 
-<div id="recentBackdrop" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10">
+<!-- Recenti -->
+<div id="recentBackdrop" class="bd">
  <div class="modal">
    <h2>PDF recenti</h2>
    <p class="muted" style="margin-top:-8px">Riapri un progetto salvato sul dispositivo, con pin e foto inclusi. Massimo 10 conservati.</p>
@@ -97,7 +134,42 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
-<div id="settingsBackdrop" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10">
+
+<!-- Elenco punti con ricerca -->
+<div id="pinsBackdrop" class="bd">
+ <div class="modal">
+   <h2>Punti</h2>
+   <input id="pinSearch" type="search" placeholder="Cerca per numero o testo della nota…">
+   <div class="row" id="pinFilters"></div>
+   <div id="pinsList" style="margin-top:8px"></div>
+   <div class="row" style="justify-content:flex-end">
+     <button id="pinsCloseBtn" class="secondary">Chiudi</button>
+   </div>
+ </div>
+</div>
+
+<!-- Esporta / backup / condividi -->
+<div id="exportBackdrop" class="bd">
+ <div class="modal">
+   <h2>Esporta</h2>
+   <p class="muted" style="margin:0 0 4px"><b>Report PDF</b> — tavole con i punti numerati + una pagina per ogni foto</p>
+   <div class="exportBtns">
+     <button id="repSave">⬇ Scarica</button>
+     <button id="repShare" class="secondary">↗ Condividi</button>
+   </div>
+   <p class="muted" style="margin:16px 0 4px"><b>Backup del progetto</b> — un solo file ZIP con PDF originale, foto e note. Utile come copia fuori dal dispositivo.</p>
+   <div class="exportBtns">
+     <button id="bakSave">⬇ Scarica</button>
+     <button id="bakShare" class="secondary">↗ Condividi</button>
+   </div>
+   <div class="row" style="justify-content:flex-end">
+     <button id="exportCloseBtn" class="secondary">Chiudi</button>
+   </div>
+ </div>
+</div>
+
+<!-- Impostazioni -->
+<div id="settingsBackdrop" class="bd">
  <div class="modal">
    <h2>Impostazioni</h2>
    <label class="muted">Dimensione pin</label>
@@ -106,157 +178,347 @@ input[type=file]{display:none}
      <span id="pinSizeVal" style="min-width:48px;text-align:right">28px</span>
    </div>
    <p class="muted" style="font-size:13px">Regola il pin finché non risulta proporzionato al dettaglio del disegno. Rimane della stessa dimensione sullo schermo anche quando usi lo zoom.</p>
+
+   <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0">
+   <label class="muted">Spazio sul dispositivo</label>
+   <div id="storageText" style="margin-top:6px;font-size:14px">Calcolo in corso…</div>
+   <div class="bar" id="storageBar"><div id="storageFill"></div></div>
+   <p id="persistText" class="muted" style="font-size:13px"></p>
+   <div class="row">
+     <button class="secondary" id="optimizeBtn">Ottimizza le foto già salvate</button>
+     <button class="secondary" id="persistBtn" style="display:none">Proteggi i dati</button>
+     <button class="secondary" id="importBtn">Importa backup</button>
+   </div>
+
    <div class="row" style="justify-content:flex-end">
      <button id="settingsCloseBtn" class="secondary">Chiudi</button>
    </div>
  </div>
 </div>
+
+<!-- Dialogo generico (conferma / testo) -->
+<div id="dlgBackdrop" class="bd">
+ <div class="modal" style="max-width:420px">
+   <h2 id="dlgTitle"></h2>
+   <p id="dlgMsg" class="muted" style="margin-top:-6px"></p>
+   <input id="dlgInput" type="text" style="display:none">
+   <div class="row" style="justify-content:flex-end">
+     <button id="dlgCancel" class="secondary">Annulla</button>
+     <button id="dlgOk">OK</button>
+   </div>
+ </div>
+</div>
+
+<div id="busy"><div class="busyBox"><div class="spinner"></div><div id="busyText"></div><div class="bar" id="busyBar"><div id="busyFill"></div></div></div></div>
 <div id="toast"></div>
 
 <input id="pdfInput" type="file" accept="application/pdf">
+<input id="backupInput" type="file">
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const DB_NAME='pdf-photo-pin-v1', STORE='projects';
-let db, project=null, pdf=null, pageNum=1, rendering=false, pendingPoint=null, selectedPhotoBlob=null, selectedPhotoUrl=null;
+const DB_NAME='pdf-photo-pin-v1', STORE='projects', HISTORY_LIMIT=10;
+const PHOTO_MAX_DIM=1600, PHOTO_QUALITY=0.8;       // le foto vengono ridotte subito dopo lo scatto
+const STATUS={
+  todo:{label:'Da verificare',color:'#dc2626'},
+  progress:{label:'In corso',color:'#f59e0b'},
+  done:{label:'Risolto',color:'#16a34a'},
+  info:{label:'Info',color:'#2563eb'}
+};
+const statusOf=p=>STATUS[p&&p.status]||STATUS.todo;
+
+let db, dbReady, project=null, pdf=null, pageNum=1, rendering=false;
+let pendingPoint=null, selectedPhotoBlob=null, selectedPhotoUrl=null, selectedPhotoOpt=false;
+let pendingStatus='todo', lastStatus='todo', movingId=null, pinFilter='all';
+let thumbUrls=[];
 
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const $=id=>document.getElementById(id);
+const yieldUI=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
+const fmt=b=>b>=1073741824?(b/1073741824).toFixed(2)+' GB':b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+const baseName=()=>(project?.name||'report').replace(/\.pdf$/i,'').replace(/[\\/:*?"<>|]+/g,'_');
 
-// ---- Dimensione pin personalizzabile (salvata sul dispositivo) ----
+// ---- Feedback: toast, caricamento con progresso, dialoghi ----
+let toastTimer;
+function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600)}
+function busy(text,pct=null){
+  $('busyText').textContent=text;
+  $('busyBar').style.display=pct==null?'none':'block';
+  if(pct!=null)$('busyFill').style.width=Math.round(pct)+'%';
+  $('busy').style.display='flex';
+}
+function hideBusy(){$('busy').style.display='none'}
+function dialog({title='',message='',input=null,okLabel='OK',danger=false}){
+  return new Promise(res=>{
+    $('dlgTitle').textContent=title; $('dlgMsg').textContent=message; $('dlgMsg').style.display=message?'block':'none';
+    const inp=$('dlgInput'), ok=$('dlgOk');
+    inp.style.display=input!==null?'block':'none'; if(input!==null)inp.value=input;
+    ok.textContent=okLabel; ok.className=danger?'danger':'';
+    const done=v=>{$('dlgBackdrop').style.display='none';ok.onclick=null;$('dlgCancel').onclick=null;res(v)};
+    ok.onclick=()=>done(input!==null?inp.value.trim():true);
+    $('dlgCancel').onclick=()=>done(input!==null?null:false);
+    $('dlgBackdrop').style.display='flex';
+    if(input!==null)setTimeout(()=>{inp.focus();inp.select()},50);
+  });
+}
+const confirmDlg=(title,message,okLabel='Elimina')=>dialog({title,message,okLabel,danger:true});
+
+// ---- Impostazioni: dimensione pin ----
 let pinSize=parseInt(localStorage.getItem('pinSize')||'28',10);
 function applyPinSize(){document.documentElement.style.setProperty('--pin-size',pinSize+'px');$('pinSizeRange').value=pinSize;$('pinSizeVal').textContent=pinSize+'px'}
 $('pinSizeRange').oninput=e=>{pinSize=parseInt(e.target.value,10);localStorage.setItem('pinSize',pinSize);applyPinSize()};
-$('settingsBtn').onclick=()=>{applyPinSize();$('settingsBackdrop').style.display='flex'};
+$('settingsBtn').onclick=()=>{applyPinSize();$('settingsBackdrop').style.display='flex';updateStorageInfo()};
 $('settingsCloseBtn').onclick=()=>{$('settingsBackdrop').style.display='none'};
 applyPinSize();
-function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',1800)}
+
+// ---- Database ----
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
-function putProject(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(project);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
-function getProject(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function putRecord(p){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(p);tx.oncomplete=res;tx.onerror=tx.onabort=()=>rej(tx.error||new Error('tx'))})}
 function listProjects(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
 function deleteProjectRecord(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
-const HISTORY_LIMIT=10;
+async function safePut(p=project){
+  try{await putRecord(p);return true}
+  catch(e){console.error(e);toast('Salvataggio non riuscito: spazio esaurito? Libera spazio da ⚙ Impostazioni.');return false}
+}
+// il progetto aperto vive in memoria: se coincide con un record dell'elenco, si lavora su quello
+const live=p=>(project&&p.id===project.id)?project:p;
+const projectSize=p=>(p.pdf?.size||0)+(p.thumb?.size||0)+(p.pins||[]).reduce((s,x)=>s+(x.photo?.size||0),0);
+
 async function enforceHistoryLimit(){
- const all=await listProjects();
- all.sort((a,b)=>b.updated-a.updated);
- for(const p of all.slice(HISTORY_LIMIT)){ if(p.id!==project?.id) await deleteProjectRecord(p.id) }
+  const all=await listProjects();
+  all.sort((a,b)=>b.updated-a.updated);
+  for(const p of all.slice(HISTORY_LIMIT)){
+    if(p.id!==project?.id){await deleteProjectRecord(p.id);toast('Rimosso il progetto più vecchio: '+p.name)}
+  }
 }
 
-async function openFile(file){
-  const buf=await file.arrayBuffer();
-  const existing=(await listProjects()).find(p=>p.name===file.name && p.pdf && p.pdf.size===buf.byteLength);
-  if(existing){
-    project=existing;
-    await loadPdf();
-    toast('Ripreso "'+project.name+'" con i punti già salvati');
-    await enforceHistoryLimit();
-    return;
+// ---- Impronta del file (per riconoscere lo stesso PDF senza falsi positivi) ----
+async function fileHash(buf){
+  if(crypto.subtle){
+    const h=await crypto.subtle.digest('SHA-256',buf);
+    return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('');
   }
-  project={id:crypto.randomUUID(),name:file.name,pdf:new Blob([buf],{type:'application/pdf'}),pages:0,pins:[],updated:Date.now()};
-  await putProject();
-  await loadPdf();
-  await enforceHistoryLimit();
+  const u=new Uint8Array(buf);let h=2166136261;                 // ripiego (contesto non sicuro): FNV-1a
+  for(let i=0;i<u.length;i++){h^=u[i];h=Math.imul(h,16777619)}
+  return 'fnv'+(h>>>0).toString(16)+'-'+u.length;
 }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function ensureHash(p){
+  if(!p.hash){p.hash=await fileHash(await p.pdf.arrayBuffer());await safePut(p)}
+  return p.hash;
+}
+
+// ---- Apertura PDF ----
+async function parsePdf(blob){
+  try{return await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise}
+  catch(err){
+    console.error(err);
+    toast(err&&err.name==='PasswordException'?'PDF protetto da password: non supportato':'Impossibile aprire il PDF: file danneggiato o non valido');
+    return null;
+  }
+}
+// carica il progetto p solo se il PDF è leggibile: in caso di errore lo stato precedente resta intatto
+async function openProject(p,{save=true}={}){
+  busy('Apertura PDF…');
+  try{
+    const doc=await parsePdf(p.pdf);
+    if(!doc)return false;
+    if(pdf){try{pdf.destroy()}catch(e){}}
+    project=p; pdf=doc; pageNum=1; movingId=null; $('moveBar').style.display='none';
+    p.pages=doc.numPages; p.updated=Date.now();
+    if(save)await safePut();
+    $('title').textContent=p.name;
+    $('empty').style.display='none'; $('viewer').style.display='block';
+    await renderPage();
+    if(!p.thumb){try{p.thumb=await makeThumb();await safePut()}catch(e){console.error(e)}}
+    return true;
+  }finally{hideBusy()}
+}
+function closeProject(){
+  if(pdf){try{pdf.destroy()}catch(e){}}
+  project=null;pdf=null;currentPdfPage=null;movingId=null;$('moveBar').style.display='none';
+  $('viewer').style.display='none';$('empty').style.display='block';
+  $('title').textContent='PDF Photo Pin';$('pageInfo').textContent='—';resetZoom();
+}
+async function openFile(file){
+  await dbReady;
+  busy('Lettura del file…');
+  try{
+    const buf=await file.arrayBuffer();
+    const head=new TextDecoder('latin1').decode(new Uint8Array(buf,0,Math.min(1024,buf.byteLength)));
+    if(!head.includes('%PDF-')){toast('Il file scelto non sembra un PDF');return}
+    const hash=await fileHash(buf);
+    const same=(await listProjects()).filter(p=>p.pdf&&p.pdf.size===buf.byteLength);
+    let existing=null;
+    for(const p of same){ if(await ensureHash(p)===hash){existing=p;break} }
+    if(existing){
+      if(await openProject(existing)){toast('Ripreso "'+project.name+'" con i punti già salvati');await enforceHistoryLimit()}
+      return;
+    }
+    const p={id:crypto.randomUUID(),name:file.name,pdf:new Blob([buf],{type:'application/pdf'}),hash,pages:0,pins:[],updated:Date.now()};
+    if(await openProject(p)) await enforceHistoryLimit();
+  }catch(err){console.error(err);toast('Errore nella lettura del file')}
+  finally{hideBusy()}
+}
+$('pdfInput').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)openFile(f)};
+$('openBtn').onclick=()=>$('pdfInput').click();
+$('emptyOpen').onclick=()=>$('pdfInput').click();
+
+// ---- Miniatura della prima tavola ----
+function makeThumb(){
+  const src=$('pdfCanvas'); const W=140;
+  let cur=src;
+  while(cur.width/2>W){                                            // riduzione a gradini: mantiene visibili le linee sottili
+    const c=document.createElement('canvas');c.width=Math.ceil(cur.width/2);c.height=Math.ceil(cur.height/2);
+    const x=c.getContext('2d');x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(cur,0,0,c.width,c.height);cur=c;
+  }
+  const c=document.createElement('canvas');c.width=W;c.height=Math.max(1,Math.round(src.height*W/src.width));
+  const x=c.getContext('2d');x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(cur,0,0,c.width,c.height);
+  return new Promise(r=>c.toBlob(r,'image/jpeg',0.7));
+}
+
+// ---- Elenco "Recenti" ----
 async function renderRecentList(){
- const list=$('recentList');
- const all=await listProjects();
- all.sort((a,b)=>b.updated-a.updated);
- if(!all.length){list.innerHTML='<p class="muted">Nessun PDF recente.</p>';return}
- list.innerHTML='';
- for(const p of all){
-   const item=document.createElement('div'); item.className='recentItem';
-   const info=document.createElement('div'); info.className='recentInfo';
-   const d=new Date(p.updated);
-   info.innerHTML=`<div class="recentName">${escapeHtml(p.name)}</div><div class="recentMeta">${p.pages||'?'} pag. · ${p.pins.length} punti · ${d.toLocaleDateString('it-IT')}</div>`;
-   const openBtn=document.createElement('button'); openBtn.textContent='Apri';
-   openBtn.onclick=async()=>{$('recentBackdrop').style.display='none';project=p;await loadPdf()};
-   const delBtn=document.createElement('button'); delBtn.className='secondary'; delBtn.textContent='🗑';
-   delBtn.onclick=async()=>{await deleteProjectRecord(p.id);renderRecentList()};
-   item.appendChild(info); item.appendChild(openBtn); item.appendChild(delBtn);
-   list.appendChild(item);
- }
+  await dbReady;
+  thumbUrls.forEach(u=>URL.revokeObjectURL(u));thumbUrls=[];
+  const list=$('recentList');
+  const all=await listProjects();
+  all.sort((a,b)=>b.updated-a.updated);
+  if(!all.length){list.innerHTML='<p class="muted">Nessun PDF recente.</p>';return}
+  list.innerHTML='';
+  for(const raw of all){
+    const p=live(raw);
+    const item=document.createElement('div'); item.className='recentItem';
+    let th;
+    if(p.thumb){th=document.createElement('img');const u=URL.createObjectURL(p.thumb);thumbUrls.push(u);th.src=u}
+    else{th=document.createElement('div');th.textContent='📄'}
+    th.className='recentThumb';
+    const info=document.createElement('div'); info.className='recentInfo';
+    const d=new Date(p.updated);
+    info.innerHTML=`<div class="recentName">${escapeHtml(p.name)}</div><div class="recentMeta">${p.pages||'?'} pag. · ${p.pins.length} punti · ${fmt(projectSize(p))} · ${d.toLocaleDateString('it-IT')}</div>`;
+    const acts=document.createElement('div'); acts.className='recentActions';
+    const mk=(txt,cls,fn,title)=>{const b=document.createElement('button');b.textContent=txt;if(cls)b.className=cls;if(title)b.title=title;b.onclick=fn;acts.appendChild(b)};
+    mk('Apri','',async()=>{$('recentBackdrop').style.display='none';await openProject(p,{save:true})});
+    mk('✏️','secondary',()=>renameProject(p),'Rinomina');
+    mk('💾','secondary',()=>{$('recentBackdrop').style.display='none';runBackup('save',p)},'Backup');
+    mk('🗑','secondary',async()=>{
+      if(!await confirmDlg('Eliminare questo progetto?','«'+p.name+'» con '+p.pins.length+' punti e le relative foto. L\'operazione non si può annullare.'))return;
+      await deleteProjectRecord(p.id);
+      if(project&&project.id===p.id)closeProject();
+      renderRecentList();
+    },'Elimina');
+    item.appendChild(th); item.appendChild(info); item.appendChild(acts);
+    list.appendChild(item);
+  }
 }
 $('recentBtn').onclick=()=>{renderRecentList();$('recentBackdrop').style.display='flex'};
 $('emptyRecent').onclick=()=>{renderRecentList();$('recentBackdrop').style.display='flex'};
 $('recentCloseBtn').onclick=()=>{$('recentBackdrop').style.display='none'};
-async function loadPdf(){
-  $('title').textContent=project.name;
-  pdf=await pdfjsLib.getDocument({data:await project.pdf.arrayBuffer()}).promise;
-  project.pages=pdf.numPages; project.updated=Date.now(); await putProject();
-  pageNum=1; $('empty').style.display='none'; $('viewer').style.display='block'; await renderPage();
+
+// ---- Rinomina progetto ----
+async function renameProject(p=project){
+  if(!p)return;
+  const v=await dialog({title:'Rinomina progetto',input:p.name.replace(/\.pdf$/i,''),okLabel:'Salva'});
+  if(!v)return;
+  const t=live(p); t.name=v;
+  if(await safePut(t)){
+    if(project&&t.id===project.id)$('title').textContent=v;
+    if($('recentBackdrop').style.display==='flex')renderRecentList();
+  }
 }
-const MAX_RENDER_DIM=4600; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad (vicino al massimo realistico su iOS)
-const BASE_HEADROOM=4; // nitidezza "di serie" fino a circa 4x, senza dover ri-renderizzare
+$('title').onclick=()=>{if(project)renameProject(project)};
+
+// ---- Rendering della tavola ----
+const MAX_RENDER_DIM=4600; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad
+const BASE_HEADROOM=4;     // nitidezza "di serie" fino a circa 4x, senza dover ri-renderizzare
 let currentPdfPage=null, baseScale=1, baseDisplayVp=null, sharpening=false, sharpenTimer=null;
 
 async function renderPage(){
- if(rendering)return; rendering=true;
- resetZoom();
- const page=await pdf.getPage(pageNum);
- currentPdfPage=page;
- const base=page.getViewport({scale:1.5});
- const maxW=Math.min(window.innerWidth-28,1100);
- const scale=Math.min(1.5,maxW/base.width); // dimensione "a schermo" (zoom x1), invariata rispetto a prima
- baseScale=scale;
- baseDisplayVp=page.getViewport({scale});
-
- $('viewer').style.width=baseDisplayVp.width+'px'; $('viewer').style.height=baseDisplayVp.height+'px';
- $('pdfCanvas').style.width=baseDisplayVp.width+'px'; $('pdfCanvas').style.height=baseDisplayVp.height+'px';
- await renderCanvasAtZoom(BASE_HEADROOM);
- $('pageInfo').textContent=pageNum+' / '+pdf.numPages;
- renderPins(); rendering=false;
+  while(rendering)await new Promise(r=>setTimeout(r,40));   // se un rendering è in corso, attende invece di saltare
+  if(!pdf)return; rendering=true;
+  try{
+    resetZoom();
+    const page=await pdf.getPage(pageNum);
+    currentPdfPage=page;
+    const base=page.getViewport({scale:1.5});
+    const maxW=Math.min(window.innerWidth-28,1100);
+    const scale=Math.min(1.5,maxW/base.width);
+    baseScale=scale;
+    baseDisplayVp=page.getViewport({scale});
+    $('viewer').style.width=baseDisplayVp.width+'px'; $('viewer').style.height=baseDisplayVp.height+'px';
+    $('pdfCanvas').style.width=baseDisplayVp.width+'px'; $('pdfCanvas').style.height=baseDisplayVp.height+'px';
+    await renderCanvasAtZoom(BASE_HEADROOM);
+    $('pageInfo').textContent=pageNum+' / '+pdf.numPages;
+    renderPins();
+  }catch(err){console.error(err);toast('Errore nel disegno della pagina')}
+  finally{rendering=false}
 }
-
-// Ri-renderizza il PDF a una risoluzione interna proporzionata al livello di zoom corrente
-// (tenendo conto del pixel-ratio del display), invece di stirare via CSS un'immagine a bassa
-// risoluzione: questo è ciò che permette uno zoom spinto (fino a 10x) restando nitido.
+// Ri-renderizza il PDF a una risoluzione proporzionata allo zoom corrente (tenendo conto del pixel-ratio),
+// invece di stirare via CSS un'immagine a bassa risoluzione: permette zoom spinto restando nitidi.
 async function renderCanvasAtZoom(targetZoom){
- if(!currentPdfPage || sharpening) return;
- sharpening=true;
- try{
-   const dpr=Math.min(window.devicePixelRatio||1,2);
-   let renderScale=baseScale*dpr*targetZoom*1.3;
-   const probe=currentPdfPage.getViewport({scale:renderScale});
-   const maxDim=Math.max(probe.width,probe.height);
-   if(maxDim>MAX_RENDER_DIM) renderScale*=MAX_RENDER_DIM/maxDim;
-   const renderVp=currentPdfPage.getViewport({scale:renderScale});
-   const c=$('pdfCanvas');
-   c.width=renderVp.width; c.height=renderVp.height;
-   await currentPdfPage.render({canvasContext:c.getContext('2d'),viewport:renderVp}).promise;
- } finally {
-   sharpening=false;
- }
+  if(!currentPdfPage || sharpening) return;
+  sharpening=true;
+  try{
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    let renderScale=baseScale*dpr*targetZoom*1.3;
+    const probe=currentPdfPage.getViewport({scale:renderScale});
+    const maxDim=Math.max(probe.width,probe.height);
+    if(maxDim>MAX_RENDER_DIM) renderScale*=MAX_RENDER_DIM/maxDim;
+    const renderVp=currentPdfPage.getViewport({scale:renderScale});
+    const c=$('pdfCanvas');
+    c.width=renderVp.width; c.height=renderVp.height;
+    await currentPdfPage.render({canvasContext:c.getContext('2d'),viewport:renderVp}).promise;
+  } finally { sharpening=false }
 }
 function scheduleSharpen(zoomLevel){
- if(zoomLevel<=BASE_HEADROOM*0.75) return; // già nitido di serie, non serve ri-renderizzare
- clearTimeout(sharpenTimer);
- sharpenTimer=setTimeout(()=>{renderCanvasAtZoom(zoomLevel).catch(()=>{})},200);
+  if(zoomLevel<=BASE_HEADROOM*0.75) return;
+  clearTimeout(sharpenTimer);
+  sharpenTimer=setTimeout(()=>{renderCanvasAtZoom(zoomLevel).catch(()=>{})},200);
 }
+
+// ---- Pin sulla tavola ----
 function renderPins(){
- $('pins').innerHTML='';
- const s=1/zScale;
- for(const p of project.pins.filter(x=>x.page===pageNum)){
-   const b=document.createElement('button');b.className='pin';b.textContent=p.n;
-   b.style.left=(p.x*100)+'%';b.style.top=(p.y*100)+'%';
-   b.style.transform=`translate(-50%,-50%) scale(${s})`;
-   b.onclick=e=>{e.stopPropagation();editPoint(p.id)};
-   $('pins').appendChild(b);
- }
+  $('pins').innerHTML='';
+  const s=1/zScale;
+  for(const p of project.pins.filter(x=>x.page===pageNum)){
+    const b=document.createElement('button');b.className='pin';b.textContent=p.n;b.dataset.id=p.id;
+    b.style.left=(p.x*100)+'%';b.style.top=(p.y*100)+'%';
+    b.style.background=statusOf(p).color;
+    b.style.transform=`translate(-50%,-50%) scale(${s})`;
+    b.onclick=e=>{e.stopPropagation();if(movingId)return;openPointModal(p.id)};
+    $('pins').appendChild(b);
+  }
 }
 function updatePinScale(){
- const s=1/zScale;
- document.querySelectorAll('#pins .pin').forEach(b=>{b.style.transform=`translate(-50%,-50%) scale(${s})`});
+  const s=1/zScale;
+  document.querySelectorAll('#pins .pin').forEach(b=>{b.style.transform=`translate(-50%,-50%) scale(${s})`});
 }
-$('viewer').addEventListener('click',e=>{
- if(Date.now()-lastGestureEnd<300)return; // ignora il tap finale di un pinch/pan
- const r=$('viewer').getBoundingClientRect();
- const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
- if(x>=0&&x<=1&&y>=0&&y<=1){pendingPoint={page:pageNum,x,y,id:null};openPointModal()}
+$('viewer').addEventListener('click',async e=>{
+  if(Date.now()-lastGestureEnd<300)return; // ignora il tap finale di un pinch/pan
+  const r=$('viewer').getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+  if(!(x>=0&&x<=1&&y>=0&&y<=1))return;
+  if(movingId){                                   // modalità "sposta pin"
+    const p=project.pins.find(q=>q.id===movingId);
+    if(p){
+      const old={page:p.page,x:p.x,y:p.y};
+      p.page=pageNum;p.x=x;p.y=y;project.updated=Date.now();
+      if(await safePut()){toast('Punto '+p.n+' spostato');renderPins()}
+      else Object.assign(p,old);
+    }
+    endMove();return;
+  }
+  pendingPoint={page:pageNum,x,y,id:null};openPointModal();
 });
+function startMove(id){
+  const p=project.pins.find(q=>q.id===id); if(!p)return;
+  movingId=id;$('moveText').textContent='Tocca la nuova posizione del punto '+p.n;$('moveBar').style.display='flex';
+}
+function endMove(){movingId=null;$('moveBar').style.display='none'}
+$('moveCancel').onclick=endMove;
 
 // ---- Zoom/pan isolati sulla tavola (pinch a due dita), il resto del sito resta fisso ----
 let zScale=1, zTx=0, zTy=0, pinchStartDist=null, pinchStartScale=1, panStart=null, panInitial=null, panMoved=false, lastGestureEnd=0;
@@ -265,172 +527,492 @@ function setZoomMode(active){$('main').style.overflow=active?'hidden':'auto'}
 function resetZoom(){zScale=1;zTx=0;zTy=0;applyTransform();setZoomMode(false);$('zoomReset').style.display='none'}
 function dist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
 $('viewer').addEventListener('touchstart',e=>{
- if(e.touches.length===2){
-   pinchStartDist=dist(e.touches[0],e.touches[1]);
-   pinchStartScale=zScale; panStart=null; panInitial=null; panMoved=false;
- }else if(e.touches.length===1 && zScale>1){
-   panStart={x:e.touches[0].clientX-zTx,y:e.touches[0].clientY-zTy};
-   panInitial={x:e.touches[0].clientX,y:e.touches[0].clientY};
-   panMoved=false;
- }
+  if(e.touches.length===2){
+    pinchStartDist=dist(e.touches[0],e.touches[1]);
+    pinchStartScale=zScale; panStart=null; panInitial=null; panMoved=false;
+  }else if(e.touches.length===1 && zScale>1){
+    panStart={x:e.touches[0].clientX-zTx,y:e.touches[0].clientY-zTy};
+    panInitial={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    panMoved=false;
+  }
 },{passive:true});
 $('viewer').addEventListener('touchmove',e=>{
- if(e.touches.length===2 && pinchStartDist){
-   e.preventDefault();
-   setZoomMode(true);
-   const d=dist(e.touches[0],e.touches[1]);
-   const newScale=Math.min(10,Math.max(1,pinchStartScale*(d/pinchStartDist)));
-   const a=e.touches[0], b=e.touches[1];
-   const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
-   const ratio=newScale/zScale;
-   zTx=mid.x-(mid.x-zTx)*ratio; zTy=mid.y-(mid.y-zTy)*ratio;
-   zScale=newScale; applyTransform();
-   $('zoomReset').style.display=zScale>1.02?'block':'none';
-   scheduleSharpen(zScale);
- }else if(e.touches.length===1 && panStart && zScale>1){
-   const t=e.touches[0];
-   if(!panMoved){
-     // sotto una piccola soglia di movimento consideriamo il tocco un tap (per piazzare un pin),
-     // non un trascinamento: senza questa soglia, un tap mentre si è zoomati veniva sempre
-     // interpretato come "pan" e il pin non veniva mai creato.
-     if(Math.hypot(t.clientX-panInitial.x,t.clientY-panInitial.y)>6) panMoved=true; else return;
-   }
-   e.preventDefault();
-   zTx=t.clientX-panStart.x; zTy=t.clientY-panStart.y;
-   applyTransform();
- }
+  if(e.touches.length===2 && pinchStartDist){
+    e.preventDefault();
+    setZoomMode(true);
+    const d=dist(e.touches[0],e.touches[1]);
+    const newScale=Math.min(10,Math.max(1,pinchStartScale*(d/pinchStartDist)));
+    const a=e.touches[0], b=e.touches[1];
+    const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
+    const ratio=newScale/zScale;
+    zTx=mid.x-(mid.x-zTx)*ratio; zTy=mid.y-(mid.y-zTy)*ratio;
+    zScale=newScale; applyTransform();
+    $('zoomReset').style.display=zScale>1.02?'block':'none';
+    scheduleSharpen(zScale);
+  }else if(e.touches.length===1 && panStart && zScale>1){
+    const t=e.touches[0];
+    if(!panMoved){
+      // sotto una piccola soglia il tocco è un tap (per piazzare un pin), non un trascinamento
+      if(Math.hypot(t.clientX-panInitial.x,t.clientY-panInitial.y)>6) panMoved=true; else return;
+    }
+    e.preventDefault();
+    zTx=t.clientX-panStart.x; zTy=t.clientY-panStart.y;
+    applyTransform();
+  }
 },{passive:false});
 $('viewer').addEventListener('touchend',e=>{
- if(e.touches.length<2){if(pinchStartDist)lastGestureEnd=Date.now();pinchStartDist=null}
- if(e.touches.length<1){if(panMoved)lastGestureEnd=Date.now();panStart=null;panInitial=null;panMoved=false}
+  if(e.touches.length<2){if(pinchStartDist)lastGestureEnd=Date.now();pinchStartDist=null}
+  if(e.touches.length<1){if(panMoved)lastGestureEnd=Date.now();panStart=null;panInitial=null;panMoved=false}
 });
 $('zoomReset').onclick=resetZoom;
-function openPointModal(editId=null){
- selectedPhotoBlob=null;
- if(selectedPhotoUrl){URL.revokeObjectURL(selectedPhotoUrl);selectedPhotoUrl=null}
- const p=editId?project.pins.find(x=>x.id===editId):null;
- pendingPoint=p?{...p}:pendingPoint;
- $('modalTitle').textContent=p?'Modifica punto '+p.n:'Nuovo punto';
- $('note').value=p?.note||'';$('preview').style.display='none';$('preview').src='';
- $('deleteBtn').style.display=p?'inline-block':'none';
- if(p?.photo){selectedPhotoBlob=p.photo;showPhoto(p.photo)}
- $('modalBackdrop').style.display='flex';
+
+// ---- Foto: ridimensionamento e compressione subito dopo lo scatto ----
+function loadImage(blob){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(blob),img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);res(img)};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('img'))};
+    img.src=url;
+  });
 }
-function showPhoto(blob){selectedPhotoUrl=URL.createObjectURL(blob);$('preview').src=selectedPhotoUrl;$('preview').style.display='block';$('hint').textContent='Foto associata';}
-function editPoint(id){openPointModal(id)}
+// ritorna {blob, optimized}; se l'immagine non è decodificabile, tiene l'originale
+async function compressPhoto(file,maxDim=PHOTO_MAX_DIM,quality=PHOTO_QUALITY){
+  try{
+    const img=await loadImage(file);            // il browser applica già l'orientamento EXIF
+    const w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,maxDim/Math.max(w,h));
+    const cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k));
+    const c=document.createElement('canvas');c.width=cw;c.height=ch;
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,cw,ch);x.drawImage(img,0,0,cw,ch);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',quality));
+    c.width=c.height=0;                          // libera memoria (importante su iOS)
+    if(!blob)throw new Error('toBlob');
+    return {blob,optimized:true};
+  }catch(e){console.error(e);return {blob:file,optimized:false}}
+}
+async function photoSelected(file){
+  if(!file)return;
+  busy('Ottimizzo la foto…');
+  try{
+    const before=file.size;
+    const r=await compressPhoto(file);
+    selectedPhotoBlob=r.blob;selectedPhotoOpt=r.optimized;showPhoto(r.blob);
+    if(r.optimized)$('hint').textContent='Foto associata ('+fmt(before)+' → '+fmt(r.blob.size)+')';
+    else toast('Foto non ottimizzata (formato non riconosciuto)');
+  }finally{hideBusy()}
+}
+function showPhoto(blob){
+  if(selectedPhotoUrl)URL.revokeObjectURL(selectedPhotoUrl);
+  selectedPhotoUrl=URL.createObjectURL(blob);$('preview').src=selectedPhotoUrl;$('preview').style.display='block';$('hint').textContent='Foto associata';
+}
+
+// ---- Finestra punto ----
+function renderStatusRow(){
+  const row=$('statusRow');row.innerHTML='';
+  for(const [k,s] of Object.entries(STATUS)){
+    const b=document.createElement('button');b.type='button';b.className='chip'+(k===pendingStatus?' on':'');
+    b.innerHTML=`<span class="dot" style="background:${s.color}"></span>${s.label}`;
+    b.onclick=()=>{pendingStatus=k;renderStatusRow()};
+    row.appendChild(b);
+  }
+}
+function openPointModal(editId=null){
+  selectedPhotoBlob=null;selectedPhotoOpt=false;
+  if(selectedPhotoUrl){URL.revokeObjectURL(selectedPhotoUrl);selectedPhotoUrl=null}
+  const p=editId?project.pins.find(x=>x.id===editId):null;
+  pendingPoint=p?{...p}:pendingPoint;
+  pendingStatus=p?(p.status||'todo'):lastStatus;
+  $('modalTitle').textContent=p?'Modifica punto '+p.n:'Nuovo punto';
+  $('note').value=p?.note||'';$('preview').style.display='none';$('preview').src='';
+  $('hint').textContent='Tocca il pulsante per scegliere o scattare una foto.';
+  $('deleteBtn').style.display=p?'inline-block':'none';
+  $('moveBtn').style.display=p?'inline-block':'none';
+  if(p?.photo){selectedPhotoBlob=p.photo;selectedPhotoOpt=!!p.photoOpt;showPhoto(p.photo)}
+  renderStatusRow();
+  $('modalBackdrop').style.display='flex';
+}
 function closeModal(){$('modalBackdrop').style.display='none'}
-function chooseFile(input){input.click()}
-async function photoSelected(file){if(!file)return;selectedPhotoBlob=file;showPhoto(file)}
-$('cameraBtn').onclick=()=>chooseFile($('cameraInput'));
-$('libraryBtn').onclick=()=>chooseFile($('libraryInput'));
-$('cameraInput').onchange=e=>photoSelected(e.target.files[0]);
-$('libraryInput').onchange=e=>photoSelected(e.target.files[0]);
+$('cameraBtn').onclick=()=>$('cameraInput').click();
+$('libraryBtn').onclick=()=>$('libraryInput').click();
+$('cameraInput').onchange=e=>{const f=e.target.files[0];e.target.value='';photoSelected(f)};
+$('libraryInput').onchange=e=>{const f=e.target.files[0];e.target.value='';photoSelected(f)};
 $('cancelBtn').onclick=closeModal;
-$('deleteBtn').onclick=async()=>{project.pins=project.pins.filter(p=>p.id!==pendingPoint.id);project.updated=Date.now();await putProject();closeModal();renderPins();toast('Punto eliminato')};
-$('saveBtn').onclick=async()=>{
- if(!selectedPhotoBlob && !pendingPoint?.photo){toast('Aggiungi una foto');return}
- const data={...pendingPoint,id:pendingPoint.id||crypto.randomUUID(),n:pendingPoint.n||((Math.max(0,...project.pins.map(p=>p.n||0))+1)),note:$('note').value.trim(),photo:selectedPhotoBlob||pendingPoint.photo};
- const idx=project.pins.findIndex(p=>p.id===data.id); if(idx>=0)project.pins[idx]=data; else project.pins.push(data);
- project.updated=Date.now();await putProject();closeModal();renderPins();toast('Punto salvato');
+async function savePoint(silent=false){
+  if(!selectedPhotoBlob){toast('Aggiungi una foto');return false}
+  const id=pendingPoint.id||crypto.randomUUID();
+  const n=pendingPoint.n||(Math.max(0,...project.pins.map(p=>p.n||0))+1);
+  const data={...pendingPoint,id,n,note:$('note').value.trim(),status:pendingStatus,photo:selectedPhotoBlob,photoOpt:selectedPhotoOpt};
+  const old=project.pins, next=old.slice(), idx=old.findIndex(p=>p.id===id);
+  if(idx>=0)next[idx]=data; else next.push(data);
+  project.pins=next; project.updated=Date.now();
+  if(!await safePut()){project.pins=old;return false}
+  lastStatus=pendingStatus;pendingPoint=data;renderPins();
+  if(!silent){closeModal();toast('Punto salvato')}
+  return true;
+}
+$('saveBtn').onclick=()=>savePoint(false);
+$('deleteBtn').onclick=async()=>{
+  const p=project.pins.find(x=>x.id===pendingPoint.id);
+  if(!await confirmDlg('Eliminare il punto '+(p?p.n:'')+'?','Verranno eliminate anche la foto e la nota associate.'))return;
+  const old=project.pins;
+  project.pins=old.filter(x=>x.id!==pendingPoint.id);project.updated=Date.now();
+  if(!await safePut()){project.pins=old;return}
+  closeModal();renderPins();toast('Punto eliminato');
 };
+$('moveBtn').onclick=async()=>{
+  const id=pendingPoint.id;
+  if(!await savePoint(true))return;           // conserva eventuali modifiche a nota/stato
+  closeModal();startMove(id);
+};
+
+// ---- Navigazione pagine ----
 $('prevBtn').onclick=async()=>{if(pdf&&pageNum>1){pageNum--;await renderPage()}};
 $('nextBtn').onclick=async()=>{if(pdf&&pageNum<pdf.numPages){pageNum++;await renderPage()}};
+let resizeTimer,lastW=window.innerWidth;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{if(pdf&&window.innerWidth!==lastW){lastW=window.innerWidth;renderPage()}},250);
+});
 
-// Input PDF nel DOM (necessario per far funzionare .click() su iPad/Safari: un input
-// creato solo in JS e mai inserito nel documento non apre il picker file su iOS).
-$('pdfInput').onchange = e => e.target.files[0] && openFile(e.target.files[0]);
-$('openBtn').onclick = () => $('pdfInput').click();
-$('emptyOpen').onclick = () => $('pdfInput').click();
-
-window.addEventListener('resize',()=>{if(pdf)renderPage()});
-openDB();
-if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
-
-// ---- Esportazione PDF con punti numerati e foto numerate ----
-function blobToImage(blob){
- return new Promise((res,rej)=>{
-   const url=URL.createObjectURL(blob);
-   const img=new Image();
-   img.onload=()=>{res(img)};
-   img.onerror=rej;
-   img.src=url;
- });
+// ---- Elenco punti con ricerca e filtro per stato ----
+function renderPinFilters(){
+  const row=$('pinFilters');row.innerHTML='';
+  const counts={all:project.pins.length};
+  for(const p of project.pins){const k=STATUS[p.status]?p.status:'todo';counts[k]=(counts[k]||0)+1}
+  const mk=(k,label,color)=>{
+    const b=document.createElement('button');b.type='button';b.className='chip'+(pinFilter===k?' on':'');
+    b.innerHTML=(color?`<span class="dot" style="background:${color}"></span>`:'')+label+' ('+(counts[k]||0)+')';
+    b.onclick=()=>{pinFilter=k;renderPinFilters();renderPinsList()};row.appendChild(b);
+  };
+  mk('all','Tutti');
+  for(const [k,s] of Object.entries(STATUS))mk(k,s.label,s.color);
 }
-function imageToJpegDataURL(img){
- const c=document.createElement('canvas');
- c.width=img.naturalWidth||img.width; c.height=img.naturalHeight||img.height;
- c.getContext('2d').drawImage(img,0,0);
- return c.toDataURL('image/jpeg',0.85);
+function renderPinsList(){
+  const q=$('pinSearch').value.trim().toLowerCase();
+  const items=[...project.pins].sort((a,b)=>a.page-b.page||a.n-b.n).filter(p=>{
+    if(pinFilter!=='all'&&(STATUS[p.status]?p.status:'todo')!==pinFilter)return false;
+    if(!q)return true;
+    return String(p.n).includes(q)||(p.note||'').toLowerCase().includes(q);
+  });
+  const list=$('pinsList');
+  if(!items.length){list.innerHTML='<p class="muted">Nessun punto trovato.</p>';return}
+  list.innerHTML='';
+  for(const p of items){
+    const r=document.createElement('div');r.className='pinRow';
+    r.innerHTML=`<div class="pinBadge" style="background:${statusOf(p).color}">${p.n}</div><div class="txt"><div class="note">${escapeHtml(p.note||'(nessuna nota)')}</div><div class="meta">Pagina ${p.page} · ${statusOf(p).label}</div></div>`;
+    r.onclick=()=>goToPin(p);
+    list.appendChild(r);
+  }
+}
+async function goToPin(p){
+  $('pinsBackdrop').style.display='none';
+  if(p.page!==pageNum){pageNum=p.page;await renderPage()} else resetZoom();
+  const el=document.querySelector(`#pins .pin[data-id="${p.id}"]`);
+  if(el){el.scrollIntoView({block:'center',inline:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),2600)}
+}
+$('pinsBtn').onclick=()=>{
+  if(!project){toast('Apri prima un PDF');return}
+  pinFilter='all';$('pinSearch').value='';renderPinFilters();renderPinsList();$('pinsBackdrop').style.display='flex';
+};
+$('pinSearch').oninput=renderPinsList;
+$('pinsCloseBtn').onclick=()=>{$('pinsBackdrop').style.display='none'};
+
+// ---- Spazio sul dispositivo ----
+async function updateStorageInfo(){
+  await dbReady;
+  const all=await listProjects();
+  const mine=all.reduce((s,p)=>s+projectSize(live(p)),0);
+  let txt='I tuoi progetti occupano '+fmt(mine)+'.',pct=null;
+  try{
+    if(navigator.storage?.estimate){
+      const {usage,quota}=await navigator.storage.estimate();
+      if(quota){pct=usage/quota*100;txt+=' Spazio del browser: '+fmt(usage)+' su circa '+fmt(quota)+' ('+pct.toFixed(1)+'%).'}
+    }
+  }catch(e){}
+  $('storageText').textContent=txt;
+  $('storageFill').style.width=Math.min(100,pct??0)+'%';
+  $('storageBar').classList.toggle('warn',pct!=null&&pct>70);
+  $('storageBar').style.display=pct==null?'none':'block';
+  let persisted=null;
+  try{if(navigator.storage?.persisted)persisted=await navigator.storage.persisted()}catch(e){}
+  $('persistText').textContent=persisted===true?'Archiviazione protetta: il sistema non cancellerà i dati in automatico.':
+    persisted===false?'Archiviazione non protetta: in caso di poco spazio il sistema potrebbe cancellare i dati. Fai backup regolari da "Esporta".':'';
+  $('persistBtn').style.display=persisted===false?'inline-block':'none';
+}
+$('persistBtn').onclick=async()=>{
+  try{const ok=await navigator.storage.persist();toast(ok?'Dati protetti':'Il sistema non ha concesso la protezione');}catch(e){toast('Non disponibile su questo dispositivo')}
+  updateStorageInfo();
+};
+async function optimizeStoredPhotos(){
+  await dbReady;
+  busy('Ottimizzo le foto salvate…',0);
+  let saved=0,count=0;
+  try{
+    const all=await listProjects();
+    const total=all.reduce((s,p)=>s+p.pins.filter(x=>x.photo).length,0)||1;let done=0;
+    for(const raw of all){
+      const p=live(raw);let changed=false;
+      for(const pin of p.pins){
+        if(!pin.photo)continue;
+        if(!pin.photoOpt||pin.photo.size>800*1024){
+          const r=await compressPhoto(pin.photo);
+          if(r.optimized){saved+=Math.max(0,pin.photo.size-r.blob.size);pin.photo=r.blob;pin.photoOpt=true;changed=true;count++}
+        }
+        busy('Ottimizzo le foto salvate…',++done/total*100);await yieldUI();
+      }
+      if(changed)await safePut(p);
+    }
+  }finally{hideBusy()}
+  if(project)renderPins();
+  toast(count?'Ottimizzate '+count+' foto, liberati '+fmt(saved):'Nessuna foto da ottimizzare');
+  updateStorageInfo();
+}
+$('optimizeBtn').onclick=optimizeStoredPhotos;
+
+// ---- ZIP (senza compressione) per il backup ----
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+async function buildZip(files,onProgress){
+  const enc=new TextEncoder(),parts=[],central=[];let offset=0;
+  const d=new Date();
+  const dosTime=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  const dosDate=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  let i=0;
+  for(const f of files){
+    const name=enc.encode(f.name),data=new Uint8Array(await f.blob.arrayBuffer()),crc=crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,0,true);
+    lh.setUint16(10,dosTime,true);lh.setUint16(12,dosDate,true);lh.setUint32(14,crc,true);
+    lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,name.length,true);lh.setUint16(28,0,true);
+    parts.push(lh.buffer,name,data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(10,0,true);
+    ch.setUint16(12,dosTime,true);ch.setUint16(14,dosDate,true);ch.setUint32(16,crc,true);
+    ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);ch.setUint16(28,name.length,true);
+    ch.setUint32(42,offset,true);
+    central.push(ch.buffer,name);
+    offset+=30+name.length+data.length;
+    if(onProgress)onProgress(++i/files.length*100);
+    await yieldUI();
+  }
+  const cdSize=central.reduce((s,b)=>s+b.byteLength,0);
+  const e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);
+  e.setUint32(12,cdSize,true);e.setUint32(16,offset,true);
+  return new Blob([...parts,...central,e.buffer],{type:'application/zip'});
+}
+async function readZip(blob){
+  const tail=new DataView(await blob.slice(Math.max(0,blob.size-65557)).arrayBuffer());
+  let e=-1;for(let i=tail.byteLength-22;i>=0;i--){if(tail.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw new Error('zip');
+  const count=tail.getUint16(e+10,true),cdSize=tail.getUint32(e+12,true),cdOff=tail.getUint32(e+16,true);
+  const cd=new DataView(await blob.slice(cdOff,cdOff+cdSize).arrayBuffer()),dec=new TextDecoder(),out=new Map();let p=0;
+  for(let i=0;i<count;i++){
+    if(cd.getUint32(p,true)!==0x02014b50)throw new Error('zip');
+    const method=cd.getUint16(p+10,true),size=cd.getUint32(p+24,true),nl=cd.getUint16(p+28,true),el=cd.getUint16(p+30,true),cl=cd.getUint16(p+32,true),lo=cd.getUint32(p+42,true);
+    const name=dec.decode(new Uint8Array(cd.buffer,p+46,nl));
+    if(method!==0)throw new Error('zip-method');
+    const lh=new DataView(await blob.slice(lo,lo+30).arrayBuffer());
+    const start=lo+30+lh.getUint16(26,true)+lh.getUint16(28,true);
+    out.set(name,blob.slice(start,start+size));
+    p+=46+nl+el+cl;
+  }
+  return out;
+}
+
+// ---- Backup / ripristino ----
+async function runBackup(mode,p=project){
+  if(!p){toast('Apri prima un PDF');return}
+  const t=live(p);
+  busy('Preparo il backup…',0);
+  try{
+    const files=[{name:'tavola.pdf',blob:t.pdf}],manifestPins=[];
+    for(const pin of [...t.pins].sort((a,b)=>a.page-b.page||a.n-b.n)){
+      const m={id:pin.id,n:pin.n,page:pin.page,x:pin.x,y:pin.y,note:pin.note||'',status:pin.status||'todo',photoOpt:!!pin.photoOpt};
+      if(pin.photo){
+        const type=pin.photo.type||'image/jpeg',ext=type.includes('png')?'png':type.includes('webp')?'webp':'jpg';
+        m.photoFile='foto/punto-'+String(pin.n).padStart(2,'0')+'.'+ext;m.photoType=type;
+        files.push({name:m.photoFile,blob:pin.photo});
+      }
+      manifestPins.push(m);
+    }
+    const manifest={app:'pdf-photo-pin',version:1,name:t.name,pages:t.pages,created:new Date().toISOString(),pins:manifestPins};
+    files.push({name:'progetto.json',blob:new Blob([JSON.stringify(manifest,null,1)],{type:'application/json'})});
+    const summary=manifestPins.map(m=>`Punto ${m.n} (pagina ${m.page}, ${STATUS[m.status]?.label||m.status}): ${m.note||'(nessuna nota)'}`).join('\n');
+    files.push({name:'riepilogo.txt',blob:new Blob([summary||'Nessun punto.'],{type:'text/plain'})});
+    const zip=await buildZip(files,pct=>busy('Preparo il backup…',pct));
+    hideBusy();
+    await deliver(zip,t.name.replace(/\.pdf$/i,'').replace(/[\\/:*?"<>|]+/g,'_')+'-backup.zip',mode);
+  }catch(err){console.error(err);toast('Errore durante il backup')}
+  finally{hideBusy()}
+}
+async function importBackup(file){
+  await dbReady;
+  busy('Ripristino del backup…');
+  try{
+    const files=await readZip(file);
+    const mf=files.get('progetto.json'),pdfB=files.get('tavola.pdf');
+    if(!mf||!pdfB)throw new Error('formato');
+    const m=JSON.parse(await mf.text());
+    if(m.app!=='pdf-photo-pin')throw new Error('formato');
+    const pdfBlob=new Blob([pdfB],{type:'application/pdf'});
+    const hash=await fileHash(await pdfBlob.arrayBuffer());
+    const pins=[];
+    for(const q of m.pins||[]){
+      const pin={id:q.id||crypto.randomUUID(),n:q.n,page:q.page,x:q.x,y:q.y,note:q.note||'',status:q.status||'todo',photoOpt:!!q.photoOpt};
+      const pb=q.photoFile&&files.get(q.photoFile);
+      if(pb)pin.photo=new Blob([pb],{type:q.photoType||'image/jpeg'});
+      pins.push(pin);
+    }
+    const existing=(await listProjects()).find(p=>p.hash===hash||(!p.hash&&p.pdf.size===pdfBlob.size));
+    if(existing&&(await ensureHash(existing))===hash){
+      hideBusy();
+      if(!await dialog({title:'Progetto già presente',message:'Esiste già un progetto con questo PDF ('+existing.pins.length+' punti). Sostituirlo con il backup ('+pins.length+' punti)?',okLabel:'Sostituisci',danger:true}))return;
+      busy('Ripristino del backup…');
+      if(project&&project.id===existing.id)closeProject();
+      await deleteProjectRecord(existing.id);
+    }
+    const p={id:crypto.randomUUID(),name:m.name||file.name.replace(/\.zip$/i,''),pdf:pdfBlob,hash,pages:m.pages||0,pins,updated:Date.now()};
+    if(await openProject(p)){$('settingsBackdrop').style.display='none';toast('Backup ripristinato: '+pins.length+' punti');await enforceHistoryLimit()}
+  }catch(err){console.error(err);toast('Backup non valido o non creato da questa app')}
+  finally{hideBusy()}
+}
+$('importBtn').onclick=()=>$('backupInput').click();
+$('backupInput').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importBackup(f)};
+
+// ---- Salvataggio / condivisione file ----
+function saveBlob(blob,filename){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+async function deliver(blob,filename,mode){
+  if(mode==='share'){
+    const file=new File([blob],filename,{type:blob.type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:filename});return}
+      catch(e){if(e.name==='AbortError')return}
+    }
+    toast('Condivisione non disponibile: salvo il file');
+  }
+  saveBlob(blob,filename);
+  toast('File salvato: '+filename);
+}
+
+// ---- Esportazione report PDF con punti numerati e foto numerate ----
+function blobToDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob)})}
+// prepara la foto per il PDF: se è già ottimizzata (JPEG senza EXIF) si legge direttamente, altrimenti si ricodifica
+async function photoForPdf(p){
+  let blob=p.photo;
+  if(!(p.photoOpt&&blob.type==='image/jpeg')){blob=(await compressPhoto(blob)).blob}
+  const [dataUrl,img]=await Promise.all([blobToDataURL(blob),loadImage(blob)]);
+  return {dataUrl,w:img.naturalWidth,h:img.naturalHeight};
 }
 async function renderExportPage(pn){
- const page=await pdf.getPage(pn);
- const scale=2;
- const vp=page.getViewport({scale});
- const canvas=document.createElement('canvas');
- canvas.width=vp.width; canvas.height=vp.height;
- const ctx=canvas.getContext('2d');
- await page.render({canvasContext:ctx,viewport:vp}).promise;
- for(const p of project.pins.filter(x=>x.page===pn)){
-   const cx=p.x*canvas.width, cy=p.y*canvas.height, r=22;
-   ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-   ctx.fillStyle='#dc2626'; ctx.fill();
-   ctx.lineWidth=4; ctx.strokeStyle='#ffffff'; ctx.stroke();
-   ctx.fillStyle='#ffffff'; ctx.font='bold '+Math.round(r*1.1)+'px sans-serif';
-   ctx.textAlign='center'; ctx.textBaseline='middle';
-   ctx.fillText(String(p.n),cx,cy+1);
- }
- return canvas;
+  const page=await pdf.getPage(pn);
+  const b1=page.getViewport({scale:1});
+  const scale=Math.min(2,4000/Math.max(b1.width,b1.height));
+  const vp=page.getViewport({scale});
+  const canvas=document.createElement('canvas');
+  canvas.width=vp.width; canvas.height=vp.height;
+  const ctx=canvas.getContext('2d');
+  await page.render({canvasContext:ctx,viewport:vp}).promise;
+  for(const p of project.pins.filter(x=>x.page===pn)){
+    const cx=p.x*canvas.width, cy=p.y*canvas.height, r=22;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fillStyle=statusOf(p).color; ctx.fill();
+    ctx.lineWidth=4; ctx.strokeStyle='#ffffff'; ctx.stroke();
+    ctx.fillStyle='#ffffff'; ctx.font='bold '+Math.round(r*1.1)+'px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(p.n),cx,cy+1);
+  }
+  return canvas;
 }
-async function exportReport(){
- if(!project||!pdf){toast('Apri prima un PDF');return}
- if(!window.jspdf){toast('Libreria export non disponibile offline');return}
- $('exportBtn').disabled=true; toast('Generazione PDF in corso...');
- try{
-   const {jsPDF}=window.jspdf;
-   const out=new jsPDF({unit:'pt',format:'a4'});
-   const pageW=out.internal.pageSize.getWidth(), pageH=out.internal.pageSize.getHeight();
-   const margin=20;
+async function buildReport(onProgress){
+  const {jsPDF}=window.jspdf;
+  const out=new jsPDF({unit:'pt',format:'a4',compress:true});
+  const pageW=out.internal.pageSize.getWidth(), pageH=out.internal.pageSize.getHeight(), margin=20;
+  const pinsSorted=[...project.pins].sort((a,b)=>a.page-b.page||a.n-b.n);
+  const total=pdf.numPages+pinsSorted.length*2; let step=0;
+  const tick=t=>{onProgress(++step/total*100,t)};
 
-   for(let pn=1; pn<=pdf.numPages; pn++){
-     const canvas=await renderExportPage(pn);
-     const imgData=canvas.toDataURL('image/jpeg',0.85);
-     const availW=pageW-margin*2, availH=pageH-margin*2;
-     const ratio=Math.min(availW/canvas.width, availH/canvas.height);
-     const w=canvas.width*ratio, h=canvas.height*ratio;
-     if(pn>1) out.addPage();
-     out.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
-   }
+  for(let pn=1; pn<=pdf.numPages; pn++){
+    onProgress(step/total*100,'Tavola '+pn+' di '+pdf.numPages+'…');
+    await yieldUI();
+    const canvas=await renderExportPage(pn);
+    const imgData=canvas.toDataURL('image/jpeg',0.85);
+    const ratio=Math.min((pageW-margin*2)/canvas.width,(pageH-margin*2)/canvas.height);
+    const w=canvas.width*ratio, h=canvas.height*ratio;
+    canvas.width=canvas.height=0;
+    if(pn>1) out.addPage();
+    out.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
+    tick('Tavola '+pn+' di '+pdf.numPages+'…');
+  }
 
-   const pinsSorted=[...project.pins].sort((a,b)=>a.page-b.page||a.n-b.n);
-   for(const p of pinsSorted){
-     out.addPage();
-     out.setFontSize(16);
-     out.text('Punto '+p.n+' — Pagina '+p.page, 40, 50);
-     out.setFontSize(11);
-     const lines=out.splitTextToSize(p.note||'(nessuna nota)', pageW-80);
-     out.text(lines, 40, 75);
-     let photoTop=75+lines.length*14+15;
-     if(p.photo){
-       const img=await blobToImage(p.photo);
-       const dataUrl=imageToJpegDataURL(img);
-       const maxW=pageW-80, maxH=pageH-photoTop-40;
-       const ratio=Math.min(maxW/img.width, maxH/img.height, 1);
-       const w=img.width*ratio, h=img.height*ratio;
-       out.addImage(dataUrl,'JPEG',40,photoTop,w,h);
-     }
-   }
+  // le foto si preparano a gruppi di 3 in parallelo (prima erano una alla volta)
+  const prepared=new Map();
+  for(let i=0;i<pinsSorted.length;i+=3){
+    await Promise.all(pinsSorted.slice(i,i+3).map(async p=>{
+      if(p.photo)prepared.set(p.id,await photoForPdf(p));
+      tick('Foto '+Math.min(i+3,pinsSorted.length)+' di '+pinsSorted.length+'…');
+    }));
+    await yieldUI();
+  }
 
-   const base=(project.name||'report').replace(/\.pdf$/i,'');
-   out.save(base+'-report.pdf');
-   toast('PDF esportato');
- }catch(err){
-   console.error(err);
-   toast('Errore durante l\'esportazione');
- }finally{
-   $('exportBtn').disabled=false;
- }
+  let k=0;
+  for(const p of pinsSorted){
+    out.addPage();
+    out.setFontSize(16);
+    out.text('Punto '+p.n+' — Pagina '+p.page, 40, 50);
+    out.setFontSize(10);
+    out.text('Stato: '+statusOf(p).label, 40, 66);
+    out.setFontSize(11);
+    const lines=out.splitTextToSize(p.note||'(nessuna nota)', pageW-80);
+    out.text(lines, 40, 88);
+    const photoTop=88+lines.length*14+15, im=prepared.get(p.id);
+    if(im){
+      const maxW=pageW-80, maxH=pageH-photoTop-40;
+      const ratio=Math.min(maxW/im.w, maxH/im.h, 1);
+      out.addImage(im.dataUrl,'JPEG',40,photoTop,im.w*ratio,im.h*ratio);
+      prepared.delete(p.id);
+    }
+    tick('Pagine foto '+(++k)+' di '+pinsSorted.length+'…');
+    if(k%3===0)await yieldUI();
+  }
+  return out.output('blob');
 }
-$('exportBtn').onclick=exportReport;
+async function runReport(mode){
+  if(!project||!pdf){toast('Apri prima un PDF');return}
+  if(!window.jspdf){toast('Libreria export non disponibile offline');return}
+  $('exportBackdrop').style.display='none';
+  busy('Generazione report…',0);
+  try{
+    const blob=await buildReport((pct,t)=>busy(t||'Generazione report…',pct));
+    hideBusy();
+    await deliver(blob,baseName()+'-report.pdf',mode);
+  }catch(err){
+    console.error(err);toast('Errore durante l\'esportazione');
+  }finally{hideBusy()}
+}
+$('exportBtn').onclick=()=>{
+  if(!project||!pdf){toast('Apri prima un PDF');return}
+  const canShare=!!navigator.share;
+  $('repShare').style.display=$('bakShare').style.display=canShare?'block':'none';
+  $('exportBackdrop').style.display='flex';
+};
+$('exportCloseBtn').onclick=()=>{$('exportBackdrop').style.display='none'};
+$('repSave').onclick=()=>runReport('save');
+$('repShare').onclick=()=>runReport('share');
+$('bakSave').onclick=()=>{$('exportBackdrop').style.display='none';runBackup('save')};
+$('bakShare').onclick=()=>{$('exportBackdrop').style.display='none';runBackup('share')};
+
+// ---- Avvio ----
+dbReady=openDB().then(async()=>{
+  try{ // chiede al sistema di non cancellare i dati; avvisa se lo spazio sta finendo
+    if(navigator.storage?.persist&&!(await navigator.storage.persisted()))await navigator.storage.persist();
+    if(navigator.storage?.estimate){const {usage,quota}=await navigator.storage.estimate();if(quota&&usage/quota>0.8)toast('Spazio quasi esaurito: apri ⚙ per liberare spazio')}
+  }catch(e){}
+}).catch(e=>{console.error(e);toast('Archiviazione locale non disponibile')});
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
 </body>
 </html>
