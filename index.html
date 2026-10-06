@@ -189,17 +189,31 @@ async function loadPdf(){
   project.pages=pdf.numPages; project.updated=Date.now(); await putProject();
   pageNum=1; $('empty').style.display='none'; $('viewer').style.display='block'; await renderPage();
 }
+const MAX_RENDER_DIM=3000; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad
 async function renderPage(){
  if(rendering)return; rendering=true;
  resetZoom();
  const page=await pdf.getPage(pageNum);
  const base=page.getViewport({scale:1.5});
  const maxW=Math.min(window.innerWidth-28,1100);
- const scale=Math.min(1.5,maxW/base.width);
- const vp=page.getViewport({scale});
- const c=$('pdfCanvas');c.width=vp.width;c.height=vp.height;
- $('viewer').style.width=vp.width+'px';$('viewer').style.height=vp.height+'px';
- await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+ const scale=Math.min(1.5,maxW/base.width); // dimensione "a schermo" (zoom x1), invariata rispetto a prima
+
+ // Il canvas viene renderizzato a una risoluzione interna più alta di quella mostrata a schermo
+ // (tenendo conto del pixel-ratio del display e di un margine per lo zoom), così pinch-zoom e
+ // schermi Retina non "stirano" un'immagine troppo piccola perdendo nitidezza.
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ let renderScale=scale*dpr*3;
+ const probe=page.getViewport({scale:renderScale});
+ const maxDim=Math.max(probe.width,probe.height);
+ if(maxDim>MAX_RENDER_DIM) renderScale*=MAX_RENDER_DIM/maxDim;
+ const renderVp=page.getViewport({scale:renderScale});
+ const displayVp=page.getViewport({scale});
+
+ const c=$('pdfCanvas');
+ c.width=renderVp.width; c.height=renderVp.height;
+ c.style.width=displayVp.width+'px'; c.style.height=displayVp.height+'px';
+ $('viewer').style.width=displayVp.width+'px'; $('viewer').style.height=displayVp.height+'px';
+ await page.render({canvasContext:c.getContext('2d'),viewport:renderVp}).promise;
  $('pageInfo').textContent=pageNum+' / '+pdf.numPages;
  renderPins(); rendering=false;
 }
