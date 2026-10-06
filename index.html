@@ -190,32 +190,51 @@ async function loadPdf(){
   pageNum=1; $('empty').style.display='none'; $('viewer').style.display='block'; await renderPage();
 }
 const MAX_RENDER_DIM=4600; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad (vicino al massimo realistico su iOS)
+const BASE_HEADROOM=4; // nitidezza "di serie" fino a circa 4x, senza dover ri-renderizzare
+let currentPdfPage=null, baseScale=1, baseDisplayVp=null, sharpening=false, sharpenTimer=null;
+
 async function renderPage(){
  if(rendering)return; rendering=true;
  resetZoom();
  const page=await pdf.getPage(pageNum);
+ currentPdfPage=page;
  const base=page.getViewport({scale:1.5});
  const maxW=Math.min(window.innerWidth-28,1100);
  const scale=Math.min(1.5,maxW/base.width); // dimensione "a schermo" (zoom x1), invariata rispetto a prima
+ baseScale=scale;
+ baseDisplayVp=page.getViewport({scale});
 
- // Il canvas viene renderizzato a una risoluzione interna più alta di quella mostrata a schermo
- // (tenendo conto del pixel-ratio del display e di un margine per lo zoom), così pinch-zoom e
- // schermi Retina non "stirano" un'immagine troppo piccola perdendo nitidezza.
- const dpr=Math.min(window.devicePixelRatio||1,2);
- let renderScale=scale*dpr*5;
- const probe=page.getViewport({scale:renderScale});
- const maxDim=Math.max(probe.width,probe.height);
- if(maxDim>MAX_RENDER_DIM) renderScale*=MAX_RENDER_DIM/maxDim;
- const renderVp=page.getViewport({scale:renderScale});
- const displayVp=page.getViewport({scale});
-
- const c=$('pdfCanvas');
- c.width=renderVp.width; c.height=renderVp.height;
- c.style.width=displayVp.width+'px'; c.style.height=displayVp.height+'px';
- $('viewer').style.width=displayVp.width+'px'; $('viewer').style.height=displayVp.height+'px';
- await page.render({canvasContext:c.getContext('2d'),viewport:renderVp}).promise;
+ $('viewer').style.width=baseDisplayVp.width+'px'; $('viewer').style.height=baseDisplayVp.height+'px';
+ $('pdfCanvas').style.width=baseDisplayVp.width+'px'; $('pdfCanvas').style.height=baseDisplayVp.height+'px';
+ await renderCanvasAtZoom(BASE_HEADROOM);
  $('pageInfo').textContent=pageNum+' / '+pdf.numPages;
  renderPins(); rendering=false;
+}
+
+// Ri-renderizza il PDF a una risoluzione interna proporzionata al livello di zoom corrente
+// (tenendo conto del pixel-ratio del display), invece di stirare via CSS un'immagine a bassa
+// risoluzione: questo è ciò che permette uno zoom spinto (fino a 10x) restando nitido.
+async function renderCanvasAtZoom(targetZoom){
+ if(!currentPdfPage || sharpening) return;
+ sharpening=true;
+ try{
+   const dpr=Math.min(window.devicePixelRatio||1,2);
+   let renderScale=baseScale*dpr*targetZoom*1.3;
+   const probe=currentPdfPage.getViewport({scale:renderScale});
+   const maxDim=Math.max(probe.width,probe.height);
+   if(maxDim>MAX_RENDER_DIM) renderScale*=MAX_RENDER_DIM/maxDim;
+   const renderVp=currentPdfPage.getViewport({scale:renderScale});
+   const c=$('pdfCanvas');
+   c.width=renderVp.width; c.height=renderVp.height;
+   await currentPdfPage.render({canvasContext:c.getContext('2d'),viewport:renderVp}).promise;
+ } finally {
+   sharpening=false;
+ }
+}
+function scheduleSharpen(zoomLevel){
+ if(zoomLevel<=BASE_HEADROOM*0.75) return; // già nitido di serie, non serve ri-renderizzare
+ clearTimeout(sharpenTimer);
+ sharpenTimer=setTimeout(()=>{renderCanvasAtZoom(zoomLevel).catch(()=>{})},200);
 }
 function renderPins(){
  $('pins').innerHTML='';
@@ -260,13 +279,14 @@ $('viewer').addEventListener('touchmove',e=>{
    e.preventDefault();
    setZoomMode(true);
    const d=dist(e.touches[0],e.touches[1]);
-   const newScale=Math.min(6,Math.max(1,pinchStartScale*(d/pinchStartDist)));
+   const newScale=Math.min(10,Math.max(1,pinchStartScale*(d/pinchStartDist)));
    const a=e.touches[0], b=e.touches[1];
    const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
    const ratio=newScale/zScale;
    zTx=mid.x-(mid.x-zTx)*ratio; zTy=mid.y-(mid.y-zTy)*ratio;
    zScale=newScale; applyTransform();
    $('zoomReset').style.display=zScale>1.02?'block':'none';
+   scheduleSharpen(zScale);
  }else if(e.touches.length===1 && panStart && zScale>1){
    const t=e.touches[0];
    if(!panMoved){
