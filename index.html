@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <title>PDF Photo Pin</title>
 <style>
+:root{--pin-size:28px}
 *{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827;overflow:hidden}
 button{font:inherit;border:0;border-radius:12px;padding:11px 15px;background:#111827;color:white}
 button.secondary{background:#e5e7eb;color:#111827}.danger{background:#b91c1c}
@@ -20,7 +21,7 @@ main{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-s
 #pdfCanvas{display:block;max-width:none}
 #pins{position:absolute;inset:0}
 #zoomReset{position:fixed;right:16px;bottom:25px;z-index:20;display:none;opacity:.92}
-.pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:#dc2626;border:3px solid white;box-shadow:0 2px 8px #0005;color:white;font-weight:700;font-size:12px;padding:0}
+.pin{position:absolute;width:var(--pin-size);height:var(--pin-size);border-radius:50%;background:#dc2626;border:calc(var(--pin-size)*0.1) solid white;box-shadow:0 2px 8px #0005;color:white;font-weight:700;font-size:calc(var(--pin-size)*0.43);padding:0}
 #empty{max-width:600px;text-align:center;margin:auto;padding:30px}
 #empty h1{font-size:28px;margin:0 0 10px}.muted{color:#6b7280}
 #modalBackdrop{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
@@ -49,6 +50,7 @@ input[type=file]{display:none}
     <button class="secondary" id="nextBtn">›</button>
     <button class="secondary" id="exportBtn">Esporta</button>
     <button class="secondary" id="recentBtn">Recenti</button>
+    <button class="secondary" id="settingsBtn">⚙</button>
     <button id="openBtn">Apri PDF</button>
   </div>
 </header>
@@ -95,6 +97,20 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
+<div id="settingsBackdrop" style="position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10">
+ <div class="modal">
+   <h2>Impostazioni</h2>
+   <label class="muted">Dimensione pin</label>
+   <div class="row" style="align-items:center;margin-top:6px">
+     <input type="range" id="pinSizeRange" min="14" max="48" step="1" style="flex:1">
+     <span id="pinSizeVal" style="min-width:48px;text-align:right">28px</span>
+   </div>
+   <p class="muted" style="font-size:13px">Regola il pin finché non risulta proporzionato al dettaglio del disegno. Rimane della stessa dimensione sullo schermo anche quando usi lo zoom.</p>
+   <div class="row" style="justify-content:flex-end">
+     <button id="settingsCloseBtn" class="secondary">Chiudi</button>
+   </div>
+ </div>
+</div>
 <div id="toast"></div>
 
 <input id="pdfInput" type="file" accept="application/pdf">
@@ -108,6 +124,14 @@ let db, project=null, pdf=null, pageNum=1, rendering=false, pendingPoint=null, s
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const $=id=>document.getElementById(id);
+
+// ---- Dimensione pin personalizzabile (salvata sul dispositivo) ----
+let pinSize=parseInt(localStorage.getItem('pinSize')||'28',10);
+function applyPinSize(){document.documentElement.style.setProperty('--pin-size',pinSize+'px');$('pinSizeRange').value=pinSize;$('pinSizeVal').textContent=pinSize+'px'}
+$('pinSizeRange').oninput=e=>{pinSize=parseInt(e.target.value,10);localStorage.setItem('pinSize',pinSize);applyPinSize()};
+$('settingsBtn').onclick=()=>{applyPinSize();$('settingsBackdrop').style.display='flex'};
+$('settingsCloseBtn').onclick=()=>{$('settingsBackdrop').style.display='none'};
+applyPinSize();
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',1800)}
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
 function putProject(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(project);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
@@ -181,12 +205,18 @@ async function renderPage(){
 }
 function renderPins(){
  $('pins').innerHTML='';
+ const s=1/zScale;
  for(const p of project.pins.filter(x=>x.page===pageNum)){
    const b=document.createElement('button');b.className='pin';b.textContent=p.n;
    b.style.left=(p.x*100)+'%';b.style.top=(p.y*100)+'%';
+   b.style.transform=`translate(-50%,-50%) scale(${s})`;
    b.onclick=e=>{e.stopPropagation();editPoint(p.id)};
    $('pins').appendChild(b);
  }
+}
+function updatePinScale(){
+ const s=1/zScale;
+ document.querySelectorAll('#pins .pin').forEach(b=>{b.style.transform=`translate(-50%,-50%) scale(${s})`});
 }
 $('viewer').addEventListener('click',e=>{
  if(Date.now()-lastGestureEnd<300)return; // ignora il tap finale di un pinch/pan
@@ -197,7 +227,7 @@ $('viewer').addEventListener('click',e=>{
 
 // ---- Zoom/pan isolati sulla tavola (pinch a due dita), il resto del sito resta fisso ----
 let zScale=1, zTx=0, zTy=0, pinchStartDist=null, pinchStartScale=1, panStart=null, panInitial=null, panMoved=false, lastGestureEnd=0;
-function applyTransform(){$('viewer').style.transform=`translate(${zTx}px,${zTy}px) scale(${zScale})`}
+function applyTransform(){$('viewer').style.transform=`translate(${zTx}px,${zTy}px) scale(${zScale})`;updatePinScale()}
 function setZoomMode(active){$('main').style.overflow=active?'hidden':'auto'}
 function resetZoom(){zScale=1;zTx=0;zTy=0;applyTransform();setZoomMode(false);$('zoomReset').style.display='none'}
 function dist(a,b){return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
