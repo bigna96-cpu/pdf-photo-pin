@@ -189,7 +189,7 @@ async function loadPdf(){
   project.pages=pdf.numPages; project.updated=Date.now(); await putProject();
   pageNum=1; $('empty').style.display='none'; $('viewer').style.display='block'; await renderPage();
 }
-const MAX_RENDER_DIM=3000; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad
+const MAX_RENDER_DIM=4600; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad (vicino al massimo realistico su iOS)
 async function renderPage(){
  if(rendering)return; rendering=true;
  resetZoom();
@@ -202,7 +202,7 @@ async function renderPage(){
  // (tenendo conto del pixel-ratio del display e di un margine per lo zoom), così pinch-zoom e
  // schermi Retina non "stirano" un'immagine troppo piccola perdendo nitidezza.
  const dpr=Math.min(window.devicePixelRatio||1,2);
- let renderScale=scale*dpr*3;
+ let renderScale=scale*dpr*5;
  const probe=page.getViewport({scale:renderScale});
  const maxDim=Math.max(probe.width,probe.height);
  if(maxDim>MAX_RENDER_DIM) renderScale*=MAX_RENDER_DIM/maxDim;
@@ -260,7 +260,7 @@ $('viewer').addEventListener('touchmove',e=>{
    e.preventDefault();
    setZoomMode(true);
    const d=dist(e.touches[0],e.touches[1]);
-   const newScale=Math.min(4,Math.max(1,pinchStartScale*(d/pinchStartDist)));
+   const newScale=Math.min(6,Math.max(1,pinchStartScale*(d/pinchStartDist)));
    const a=e.touches[0], b=e.touches[1];
    const mid={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
    const ratio=newScale/zScale;
