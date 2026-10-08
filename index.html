@@ -219,7 +219,7 @@ input[type=file]{display:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const DB_NAME='pdf-photo-pin-v1', STORE='projects', HISTORY_LIMIT=10;
+const DB_NAME='pdf-photo-pin-v1', STORE='projects', HISTORY_LIMIT=25;
 const PHOTO_MAX_DIM=1600, PHOTO_QUALITY=0.8;       // le foto vengono ridotte subito dopo lo scatto
 const STATUS={
   todo:{label:'Da verificare',color:'#dc2626'},
@@ -288,11 +288,20 @@ async function safePut(p=project){
 const live=p=>(project&&p.id===project.id)?project:p;
 const projectSize=p=>(p.pdf?.size||0)+(p.thumb?.size||0)+(p.pins||[]).reduce((s,x)=>s+(x.photo?.size||0),0);
 
+// Oltre il limite, chiede sempre conferma prima di eliminare il progetto più vecchio (con le sue foto):
+// una pulizia automatica e silenziosa è proprio quello che ha causato perdite di dati in passato.
 async function enforceHistoryLimit(){
   const all=await listProjects();
   all.sort((a,b)=>b.updated-a.updated);
   for(const p of all.slice(HISTORY_LIMIT)){
-    if(p.id!==project?.id){await deleteProjectRecord(p.id);toast('Rimosso il progetto più vecchio: '+p.name)}
+    if(p.id===project?.id)continue;
+    const ok=await confirmDlg(
+      'Limite di '+HISTORY_LIMIT+' progetti raggiunto',
+      '«'+p.name+'» ('+p.pins.length+' punti con foto) è il più vecchio e non apri da tempo. '+
+      'Se non ne hai già un backup, annulla e salvane uno da Recenti (💾) prima di eliminarlo.',
+      'Elimina'
+    );
+    if(ok){await deleteProjectRecord(p.id);toast('Eliminato: '+p.name)}
   }
 }
 
@@ -1011,6 +1020,16 @@ dbReady=openDB().then(async()=>{
     if(navigator.storage?.persist&&!(await navigator.storage.persisted()))await navigator.storage.persist();
     if(navigator.storage?.estimate){const {usage,quota}=await navigator.storage.estimate();if(quota&&usage/quota>0.8)toast('Spazio quasi esaurito: apri ⚙ per liberare spazio')}
   }catch(e){}
+  // Riapre da sola l'ultimo progetto su cui si stava lavorando: prima l'app partiva sempre dalla
+  // schermata vuota, e riaprendola sul cantiere (dopo che iOS la chiude in background) sembrava
+  // aver "perso" tutto, mentre i dati erano semplicemente fermi in Recenti.
+  try{
+    const all=await listProjects();
+    if(all.length){
+      all.sort((a,b)=>b.updated-a.updated);
+      await openProject(all[0],{save:false});
+    }
+  }catch(e){console.error(e)}
 }).catch(e=>{console.error(e);toast('Archiviazione locale non disponibile')});
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
