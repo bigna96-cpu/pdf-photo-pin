@@ -95,7 +95,7 @@ input[type=file]{display:none}
 </main>
 <button id="zoomReset" class="secondary">1:1</button>
 <div id="moveBar"><span id="moveText">Tocca la nuova posizione</span><button id="moveCancel">Annulla</button></div>
-
+ 
 <!-- Punto: nuovo / modifica -->
 <div id="modalBackdrop" class="bd">
  <div class="modal">
@@ -122,7 +122,7 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
-
+ 
 <!-- Recenti -->
 <div id="recentBackdrop" class="bd">
  <div class="modal">
@@ -134,7 +134,7 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
-
+ 
 <!-- Elenco punti con ricerca -->
 <div id="pinsBackdrop" class="bd">
  <div class="modal">
@@ -147,7 +147,7 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
-
+ 
 <!-- Esporta / backup / condividi -->
 <div id="exportBackdrop" class="bd">
  <div class="modal">
@@ -167,7 +167,7 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
-
+ 
 <!-- Impostazioni -->
 <div id="settingsBackdrop" class="bd">
  <div class="modal">
@@ -178,7 +178,7 @@ input[type=file]{display:none}
      <span id="pinSizeVal" style="min-width:48px;text-align:right">28px</span>
    </div>
    <p class="muted" style="font-size:13px">Regola il pin finché non risulta proporzionato al dettaglio del disegno. Rimane della stessa dimensione sullo schermo anche quando usi lo zoom.</p>
-
+ 
    <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0">
    <label class="muted">Spazio sul dispositivo</label>
    <div id="storageText" style="margin-top:6px;font-size:14px">Calcolo in corso…</div>
@@ -189,13 +189,13 @@ input[type=file]{display:none}
      <button class="secondary" id="persistBtn" style="display:none">Proteggi i dati</button>
      <button class="secondary" id="importBtn">Importa backup</button>
    </div>
-
+ 
    <div class="row" style="justify-content:flex-end">
      <button id="settingsCloseBtn" class="secondary">Chiudi</button>
    </div>
  </div>
 </div>
-
+ 
 <!-- Dialogo generico (conferma / testo) -->
 <div id="dlgBackdrop" class="bd">
  <div class="modal" style="max-width:420px">
@@ -208,14 +208,14 @@ input[type=file]{display:none}
    </div>
  </div>
 </div>
-
+ 
 <div id="busy"><div class="busyBox"><div class="spinner"></div><div id="busyText"></div><div class="bar" id="busyBar"><div id="busyFill"></div></div></div></div>
 <div id="toast"></div>
-
+ 
 <input id="pdfInput" type="file" accept="application/pdf">
 <input id="backupInput" type="file">
 </div>
-
+ 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -228,20 +228,20 @@ const STATUS={
   info:{label:'Info',color:'#2563eb'}
 };
 const statusOf=p=>STATUS[p&&p.status]||STATUS.todo;
-
+ 
 let db, dbReady, project=null, pdf=null, pageNum=1, rendering=false;
 let pendingPoint=null, selectedPhotoBlob=null, selectedPhotoUrl=null, selectedPhotoOpt=false;
 let pendingStatus='todo', lastStatus='todo', movingId=null, pinFilter='all';
 let thumbUrls=[];
-
+ 
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
+ 
 const $=id=>document.getElementById(id);
 const yieldUI=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
 const fmt=b=>b>=1073741824?(b/1073741824).toFixed(2)+' GB':b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 const baseName=()=>(project?.name||'report').replace(/\.pdf$/i,'').replace(/[\\/:*?"<>|]+/g,'_');
-
+ 
 // ---- Feedback: toast, caricamento con progresso, dialoghi ----
 let toastTimer;
 function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2600)}
@@ -266,7 +266,7 @@ function dialog({title='',message='',input=null,okLabel='OK',danger=false}){
   });
 }
 const confirmDlg=(title,message,okLabel='Elimina')=>dialog({title,message,okLabel,danger:true});
-
+ 
 // ---- Impostazioni: dimensione pin ----
 let pinSize=parseInt(localStorage.getItem('pinSize')||'28',10);
 function applyPinSize(){document.documentElement.style.setProperty('--pin-size',pinSize+'px');$('pinSizeRange').value=pinSize;$('pinSizeVal').textContent=pinSize+'px'}
@@ -274,11 +274,42 @@ $('pinSizeRange').oninput=e=>{pinSize=parseInt(e.target.value,10);localStorage.s
 $('settingsBtn').onclick=()=>{applyPinSize();$('settingsBackdrop').style.display='flex';updateStorageInfo()};
 $('settingsCloseBtn').onclick=()=>{$('settingsBackdrop').style.display='none'};
 applyPinSize();
-
+ 
 // ---- Database ----
+// Safari/iOS ha un bug noto nel salvare oggetti Blob dentro IndexedDB: il Blob può risultare
+// illeggibile (o vuoto) dopo che la pagina viene ricaricata, anche se la scrittura sembrava riuscita
+// — esattamente il sintomo "le foto spariscono quando chiudo e riapro". Per aggirarlo, i Blob (PDF,
+// miniatura, foto dei punti) vengono convertiti in ArrayBuffer prima di scrivere su IndexedDB, e
+// ricostruiti in Blob alla lettura: il resto del codice continua a lavorare con Blob normali.
+const bufCache=new WeakMap(); // evita di ri-convertire lo stesso Blob (es. il PDF) ad ogni salvataggio
+async function blobToBuf(blob){
+  if(bufCache.has(blob))return bufCache.get(blob);
+  const out={__buf:true,buf:await blob.arrayBuffer(),type:blob.type||'application/octet-stream'};
+  bufCache.set(blob,out);
+  return out;
+}
+function bufToBlob(v){
+  if(!v)return v;
+  if(v.__buf)return new Blob([v.buf],{type:v.type});
+  return v; // compatibilità con eventuali record scritti prima di questa modifica
+}
+async function serializeProject(p){
+  const out={...p};
+  if(p.pdf)out.pdf=await blobToBuf(p.pdf);
+  if(p.thumb)out.thumb=await blobToBuf(p.thumb);
+  out.pins=await Promise.all((p.pins||[]).map(async pin=>pin.photo?{...pin,photo:await blobToBuf(pin.photo)}:pin));
+  return out;
+}
+function deserializeProject(r){
+  if(!r)return r;
+  return {...r,pdf:bufToBlob(r.pdf),thumb:bufToBlob(r.thumb),pins:(r.pins||[]).map(pin=>pin.photo?{...pin,photo:bufToBlob(pin.photo)}:pin)};
+}
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id'});r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
-function putRecord(p){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(p);tx.oncomplete=res;tx.onerror=tx.onabort=()=>rej(tx.error||new Error('tx'))})}
-function listProjects(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+async function putRecord(p){
+  const rec=await serializeProject(p);
+  return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(rec);tx.oncomplete=res;tx.onerror=tx.onabort=()=>rej(tx.error||new Error('tx'))});
+}
+function listProjects(){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readonly');const r=tx.objectStore(STORE).getAll();r.onsuccess=()=>res((r.result||[]).map(deserializeProject));r.onerror=()=>rej(r.error)})}
 function deleteProjectRecord(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)})}
 async function safePut(p=project){
   try{await putRecord(p);return true}
@@ -287,7 +318,7 @@ async function safePut(p=project){
 // il progetto aperto vive in memoria: se coincide con un record dell'elenco, si lavora su quello
 const live=p=>(project&&p.id===project.id)?project:p;
 const projectSize=p=>(p.pdf?.size||0)+(p.thumb?.size||0)+(p.pins||[]).reduce((s,x)=>s+(x.photo?.size||0),0);
-
+ 
 // Oltre il limite, chiede sempre conferma prima di eliminare il progetto più vecchio (con le sue foto):
 // una pulizia automatica e silenziosa è proprio quello che ha causato perdite di dati in passato.
 async function enforceHistoryLimit(){
@@ -304,7 +335,7 @@ async function enforceHistoryLimit(){
     if(ok){await deleteProjectRecord(p.id);toast('Eliminato: '+p.name)}
   }
 }
-
+ 
 // ---- Impronta del file (per riconoscere lo stesso PDF senza falsi positivi) ----
 async function fileHash(buf){
   if(crypto.subtle){
@@ -319,7 +350,7 @@ async function ensureHash(p){
   if(!p.hash){p.hash=await fileHash(await p.pdf.arrayBuffer());await safePut(p)}
   return p.hash;
 }
-
+ 
 // ---- Apertura PDF ----
 async function parsePdf(blob){
   try{return await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise}
@@ -375,7 +406,7 @@ async function openFile(file){
 $('pdfInput').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)openFile(f)};
 $('openBtn').onclick=()=>$('pdfInput').click();
 $('emptyOpen').onclick=()=>$('pdfInput').click();
-
+ 
 // ---- Miniatura della prima tavola ----
 function makeThumb(){
   const src=$('pdfCanvas'); const W=140;
@@ -388,7 +419,7 @@ function makeThumb(){
   const x=c.getContext('2d');x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(cur,0,0,c.width,c.height);
   return new Promise(r=>c.toBlob(r,'image/jpeg',0.7));
 }
-
+ 
 // ---- Elenco "Recenti" ----
 async function renderRecentList(){
   await dbReady;
@@ -426,7 +457,7 @@ async function renderRecentList(){
 $('recentBtn').onclick=()=>{renderRecentList();$('recentBackdrop').style.display='flex'};
 $('emptyRecent').onclick=()=>{renderRecentList();$('recentBackdrop').style.display='flex'};
 $('recentCloseBtn').onclick=()=>{$('recentBackdrop').style.display='none'};
-
+ 
 // ---- Rinomina progetto ----
 async function renameProject(p=project){
   if(!p)return;
@@ -439,12 +470,12 @@ async function renameProject(p=project){
   }
 }
 $('title').onclick=()=>{if(project)renameProject(project)};
-
+ 
 // ---- Rendering della tavola ----
 const MAX_RENDER_DIM=4600; // tetto di sicurezza per non sforare i limiti di memoria canvas su iPad
 const BASE_HEADROOM=4;     // nitidezza "di serie" fino a circa 4x, senza dover ri-renderizzare
 let currentPdfPage=null, baseScale=1, baseDisplayVp=null, sharpening=false, sharpenTimer=null;
-
+ 
 async function renderPage(){
   while(rendering)await new Promise(r=>setTimeout(r,40));   // se un rendering è in corso, attende invece di saltare
   if(!pdf)return; rendering=true;
@@ -487,7 +518,7 @@ function scheduleSharpen(zoomLevel){
   clearTimeout(sharpenTimer);
   sharpenTimer=setTimeout(()=>{renderCanvasAtZoom(zoomLevel).catch(()=>{})},200);
 }
-
+ 
 // ---- Pin sulla tavola ----
 function renderPins(){
   $('pins').innerHTML='';
@@ -528,7 +559,7 @@ function startMove(id){
 }
 function endMove(){movingId=null;$('moveBar').style.display='none'}
 $('moveCancel').onclick=endMove;
-
+ 
 // ---- Zoom/pan isolati sulla tavola (pinch a due dita), il resto del sito resta fisso ----
 let zScale=1, zTx=0, zTy=0, pinchStartDist=null, pinchStartScale=1, panStart=null, panInitial=null, panMoved=false, lastGestureEnd=0;
 function applyTransform(){$('viewer').style.transform=`translate(${zTx}px,${zTy}px) scale(${zScale})`;updatePinScale()}
@@ -574,7 +605,7 @@ $('viewer').addEventListener('touchend',e=>{
   if(e.touches.length<1){if(panMoved)lastGestureEnd=Date.now();panStart=null;panInitial=null;panMoved=false}
 });
 $('zoomReset').onclick=resetZoom;
-
+ 
 // ---- Foto: ridimensionamento e compressione subito dopo lo scatto ----
 function loadImage(blob){
   return new Promise((res,rej)=>{
@@ -613,7 +644,7 @@ function showPhoto(blob){
   if(selectedPhotoUrl)URL.revokeObjectURL(selectedPhotoUrl);
   selectedPhotoUrl=URL.createObjectURL(blob);$('preview').src=selectedPhotoUrl;$('preview').style.display='block';$('hint').textContent='Foto associata';
 }
-
+ 
 // ---- Finestra punto ----
 function renderStatusRow(){
   const row=$('statusRow');row.innerHTML='';
@@ -672,7 +703,7 @@ $('moveBtn').onclick=async()=>{
   if(!await savePoint(true))return;           // conserva eventuali modifiche a nota/stato
   closeModal();startMove(id);
 };
-
+ 
 // ---- Navigazione pagine ----
 $('prevBtn').onclick=async()=>{if(pdf&&pageNum>1){pageNum--;await renderPage()}};
 $('nextBtn').onclick=async()=>{if(pdf&&pageNum<pdf.numPages){pageNum++;await renderPage()}};
@@ -681,7 +712,7 @@ window.addEventListener('resize',()=>{
   clearTimeout(resizeTimer);
   resizeTimer=setTimeout(()=>{if(pdf&&window.innerWidth!==lastW){lastW=window.innerWidth;renderPage()}},250);
 });
-
+ 
 // ---- Elenco punti con ricerca e filtro per stato ----
 function renderPinFilters(){
   const row=$('pinFilters');row.innerHTML='';
@@ -724,7 +755,7 @@ $('pinsBtn').onclick=()=>{
 };
 $('pinSearch').oninput=renderPinsList;
 $('pinsCloseBtn').onclick=()=>{$('pinsBackdrop').style.display='none'};
-
+ 
 // ---- Spazio sul dispositivo ----
 async function updateStorageInfo(){
   await dbReady;
@@ -776,7 +807,7 @@ async function optimizeStoredPhotos(){
   updateStorageInfo();
 }
 $('optimizeBtn').onclick=optimizeStoredPhotos;
-
+ 
 // ---- ZIP (senza compressione) per il backup ----
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
 function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
@@ -827,7 +858,7 @@ async function readZip(blob){
   }
   return out;
 }
-
+ 
 // ---- Backup / ripristino ----
 async function runBackup(mode,p=project){
   if(!p){toast('Apri prima un PDF');return}
@@ -887,7 +918,7 @@ async function importBackup(file){
 }
 $('importBtn').onclick=()=>$('backupInput').click();
 $('backupInput').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importBackup(f)};
-
+ 
 // ---- Salvataggio / condivisione file ----
 function saveBlob(blob,filename){
   const url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -906,7 +937,7 @@ async function deliver(blob,filename,mode){
   saveBlob(blob,filename);
   toast('File salvato: '+filename);
 }
-
+ 
 // ---- Esportazione report PDF con punti numerati e foto numerate ----
 function blobToDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob)})}
 // prepara la foto per il PDF: se è già ottimizzata (JPEG senza EXIF) si legge direttamente, altrimenti si ricodifica
@@ -943,7 +974,7 @@ async function buildReport(onProgress){
   const pinsSorted=[...project.pins].sort((a,b)=>a.page-b.page||a.n-b.n);
   const total=pdf.numPages+pinsSorted.length*2; let step=0;
   const tick=t=>{onProgress(++step/total*100,t)};
-
+ 
   for(let pn=1; pn<=pdf.numPages; pn++){
     onProgress(step/total*100,'Tavola '+pn+' di '+pdf.numPages+'…');
     await yieldUI();
@@ -956,7 +987,7 @@ async function buildReport(onProgress){
     out.addImage(imgData,'JPEG',(pageW-w)/2,(pageH-h)/2,w,h);
     tick('Tavola '+pn+' di '+pdf.numPages+'…');
   }
-
+ 
   // le foto si preparano a gruppi di 3 in parallelo (prima erano una alla volta)
   const prepared=new Map();
   for(let i=0;i<pinsSorted.length;i+=3){
@@ -966,7 +997,7 @@ async function buildReport(onProgress){
     }));
     await yieldUI();
   }
-
+ 
   let k=0;
   for(const p of pinsSorted){
     out.addPage();
@@ -1013,7 +1044,7 @@ $('repSave').onclick=()=>runReport('save');
 $('repShare').onclick=()=>runReport('share');
 $('bakSave').onclick=()=>{$('exportBackdrop').style.display='none';runBackup('save')};
 $('bakShare').onclick=()=>{$('exportBackdrop').style.display='none';runBackup('share')};
-
+ 
 // ---- Avvio ----
 dbReady=openDB().then(async()=>{
   try{ // chiede al sistema di non cancellare i dati; avvisa se lo spazio sta finendo
