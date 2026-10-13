@@ -671,7 +671,7 @@ function openPointModal(editId=null){
   pendingStatus=p?(p.status||'todo'):lastStatus;
   $('modalTitle').textContent=p?'Modifica punto '+p.n:'Nuovo punto';
   $('note').value=p?.note||'';$('preview').style.display='none';$('preview').src='';
-  $('hint').textContent='Tocca il pulsante per scegliere o scattare una foto.';
+  $('hint').textContent='Foto opzionale: tocca per scegliere o scattare, oppure scrivi solo una nota.';
   $('deleteBtn').style.display=p?'inline-block':'none';
   $('moveBtn').style.display=p?'inline-block':'none';
   if(p?.photo){selectedPhotoBlob=p.photo;selectedPhotoOpt=!!p.photoOpt;showPhoto(p.photo)}
@@ -685,10 +685,11 @@ $('cameraInput').onchange=e=>{const f=e.target.files[0];e.target.value='';photoS
 $('libraryInput').onchange=e=>{const f=e.target.files[0];e.target.value='';photoSelected(f)};
 $('cancelBtn').onclick=closeModal;
 async function savePoint(silent=false){
-  if(!selectedPhotoBlob){toast('Aggiungi una foto');return false}
+  const noteText=$('note').value.trim();
+  if(!selectedPhotoBlob&&!noteText){toast('Aggiungi una foto o scrivi una nota');return false}
   const id=pendingPoint.id||crypto.randomUUID();
   const n=pendingPoint.n||(Math.max(0,...project.pins.map(p=>p.n||0))+1);
-  const data={...pendingPoint,id,n,note:$('note').value.trim(),status:pendingStatus,photo:selectedPhotoBlob,photoOpt:selectedPhotoOpt};
+  const data={...pendingPoint,id,n,note:noteText,status:pendingStatus,photo:selectedPhotoBlob||null,photoOpt:selectedPhotoBlob?selectedPhotoOpt:false};
   const old=project.pins, next=old.slice(), idx=old.findIndex(p=>p.id===id);
   if(idx>=0)next[idx]=data; else next.push(data);
   project.pins=next; project.updated=Date.now();
@@ -700,7 +701,7 @@ async function savePoint(silent=false){
 $('saveBtn').onclick=()=>savePoint(false);
 $('deleteBtn').onclick=async()=>{
   const p=project.pins.find(x=>x.id===pendingPoint.id);
-  if(!await confirmDlg('Eliminare il punto '+(p?p.n:'')+'?','Verranno eliminate anche la foto e la nota associate.'))return;
+  if(!await confirmDlg('Eliminare il punto '+(p?p.n:'')+'?','Verranno eliminate anche la nota e la foto eventualmente associate.'))return;
   const old=project.pins;
   project.pins=old.filter(x=>x.id!==pendingPoint.id);project.updated=Date.now();
   if(!await safePut()){project.pins=old;return}
